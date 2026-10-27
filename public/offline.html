@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>ออฟไลน์ · Lumen Library</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f6f1;
+        --surface: #ffffff;
+        --ink: #111820;
+        --muted: #68737f;
+        --line: #e4e1d8;
+        --accent: #0f766e;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #090e14;
+          --surface: #111a24;
+          --ink: #eff4f8;
+          --muted: #93a2b2;
+          --line: #22303c;
+          --accent: #2dd4bf;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'IBM Plex Sans Thai', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+      .card {
+        width: min(420px, 100%);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 32px 28px;
+        text-align: center;
+        box-shadow: 0 24px 60px -32px rgba(17, 24, 32, 0.4);
+      }
+      .mark {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 18px;
+        border-radius: 20px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #14b8a6, #0f766e);
+      }
+      h1 { font-size: 1.3rem; margin: 0 0 8px; }
+      p { color: var(--muted); font-size: 0.94rem; line-height: 1.65; margin: 0 0 22px; }
+      .actions { display: flex; flex-direction: column; gap: 10px; }
+      button, a {
+        appearance: none;
+        border-radius: 999px;
+        padding: 12px 20px;
+        font: inherit;
+        font-size: 0.92rem;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      button {
+        border: none;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 600;
+      }
+      a { border: 1px solid var(--line); color: var(--ink); }
+      .hint { margin-top: 18px; font-size: 0.78rem; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="mark" aria-hidden="true">
+        <svg width="34" height="34" viewBox="0 0 40 40" fill="none">
+          <path d="M11 12.5c3.2-1.6 6.1-1.6 9 0v16c-2.9-1.6-5.8-1.6-9 0z" stroke="white" stroke-width="1.8" stroke-linejoin="round" />
+          <path d="M29 12.5c-3.2-1.6-6.1-1.6-9 0v16c2.9-1.6 5.8-1.6 9 0z" stroke="white" stroke-width="1.8" stroke-linejoin="round" />
+          <circle cx="20" cy="9" r="1.8" fill="white" />
+        </svg>
+      </div>
+      <h1>ตอนนี้คุณออฟไลน์อยู่</h1>
+      <p>หน้านี้ยังไม่ถูกบันทึกไว้ในเครื่อง กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองอีกครั้ง</p>
+      <div class="actions">
+        <button type="button" onclick="location.reload()">ลองเชื่อมต่อใหม่</button>
+        <a href="/">กลับหน้าแรก</a>
+      </div>
+      <p class="hint">หน้าที่เคยเปิดไว้จะยังใช้งานได้จากแคชออฟไลน์</p>
+    </main>
+    <script>
+      window.addEventListener('online', () => location.reload());
+    </script>
+  </body>
+</html>

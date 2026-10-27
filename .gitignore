@@ -1,0 +1,16 @@
+node_modules/
+dist/
+data/
+artifacts/
+.local-libs/
+.local-debs/
+*.log
+.DS_Store
+.env
+.env.*
+.logs/
+.tmp/
+public/seed/
+sites-build/
+.wrangler/
+/freebuff-sites-build/

@@ -1,0 +1,71 @@
+{
+  "id": "/",
+  "name": "Lumen Library — ศูนย์รวมวารสารและหนังสืออิเล็กทรอนิกส์",
+  "short_name": "Lumen",
+  "description": "อ่านวารสาร งานวิจัย และหนังสืออิเล็กทรอนิกส์ พร้อมระบบสืบค้นอัจฉริยะ ใช้งานได้ทุกอุปกรณ์",
+  "lang": "th",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
+  "background_color": "#f7f6f1",
+  "theme_color": "#0f766e",
+  "categories": ["books", "education", "reference"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/install-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "หน้าแรกของ Lumen Library บนเดสก์ท็อป"
+    },
+    {
+      "src": "/screenshots/install-narrow.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "หน้าแรกของ Lumen Library บนมือถือ"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "ค้นหาสารสนเทศ",
+      "short_name": "ค้นหา",
+      "url": "/library?focus=search",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "ชั้นหนังสือของฉัน",
+      "short_name": "ชั้นหนังสือ",
+      "url": "/account",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "คลังสารสนเทศ",
+      "short_name": "คลัง",
+      "url": "/library",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}
