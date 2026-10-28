@@ -11,6 +11,10 @@ export const runtime = {
   // pieces because the host rejects bodies above a few megabytes (Vercel: 4.5 MB).
   uploadMode: 'multipart',
   chunkBytes: 4 * 1024 * 1024,
+  // Set by the host entry point when uploads cannot be stored (e.g. Vercel
+  // without BLOB_READ_WRITE_TOKEN): requests then fail with this explanation
+  // instead of an opaque 500 from a read-only disk.
+  storageIssue: null,
 };
 
 export function setDatabaseDriver(next) {

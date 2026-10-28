@@ -35,6 +35,7 @@ async function ownedSession(req) {
 
 router.post('/start', canManageContent, async (req, res, next) => {
   try {
+    if (runtime.storageIssue) return res.status(503).json({ error: runtime.storageIssue });
     const publicationId = Number(req.body?.publicationId);
     const kind = req.body?.kind === 'cover' ? 'cover' : 'file';
     const filename = String(req.body?.filename ?? '').slice(0, 200);

@@ -2,6 +2,8 @@
 // the Worker and on disk during local development.
 // Keys are relative paths under the uploads root, e.g. "books/12/book.pdf".
 
+import { runtime } from './db.js';
+
 let driver = null;
 
 export function setStorageDriver(next) {
@@ -53,6 +55,12 @@ export function keyFromUrl(url) {
 }
 
 export async function putObject(key, body, contentType) {
+  if (runtime.storageIssue) {
+    const error = new Error(runtime.storageIssue);
+    error.status = 503;
+    error.expose = true;
+    throw error;
+  }
   const bytes = toBytes(body);
   await getStorageDriver().put(key, bytes, contentType ?? contentTypeFor(key));
   return { key, size: bytes.length };

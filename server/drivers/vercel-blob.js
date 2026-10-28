@@ -9,6 +9,15 @@ import { contentTypeFor } from '../storage.js';
 export function createBlobStorage({ token }) {
   const auth = token ? { token } : {};
 
+  // Surface the real cause (bad/expired token, network) to the admin screen
+  // instead of the generic internal-server-error message.
+  const wrap = (action) => (cause) => {
+    const error = new Error(`Vercel Blob: ${action}ไม่สำเร็จ — ${cause?.message ?? cause}`);
+    error.expose = true;
+    error.status = 502;
+    throw error;
+  };
+
   async function headOrNull(key) {
     try {
       return await head(key, auth);
@@ -26,10 +35,10 @@ export function createBlobStorage({ token }) {
         contentType: contentType ?? contentTypeFor(key),
         addRandomSuffix: false,
         allowOverwrite: true,
-      });
+      }).catch(wrap('บันทึกไฟล์'));
     },
     async get(key) {
-      const result = await get(key, { access: 'public', ...auth });
+      const result = await get(key, { access: 'public', ...auth }).catch(wrap('อ่านไฟล์'));
       if (!result || result.statusCode !== 200 || !result.stream) return null;
       const bytes = new Uint8Array(await new Response(result.stream).arrayBuffer());
       return {
