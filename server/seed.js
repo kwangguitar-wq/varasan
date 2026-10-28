@@ -680,7 +680,9 @@ export async function seedDatabase() {
   const readers = USERS.filter((user) => user.role === 'reader').map((user) => userIds[user.email]);
   const counters = new Map(published.map((entry) => [entry.id, { views: 0, reads: 0, downloads: 0 }]));
 
-  db.exec('BEGIN');
+  // Awaited: cloud drivers (libSQL/Turso) open the transaction asynchronously,
+  // so firing BEGIN without waiting would let inserts run outside it.
+  await db.exec('BEGIN');
   try {
     for (let offset = 44; offset >= 0; offset -= 1) {
       const day = new Date(Date.now() - offset * 86400_000).toISOString().slice(0, 10);
@@ -706,9 +708,9 @@ export async function seedDatabase() {
         if (complete) await push('complete', 1);
       }
     }
-    db.exec('COMMIT');
+    await db.exec('COMMIT');
   } catch (error) {
-    db.exec('ROLLBACK');
+    await db.exec('ROLLBACK');
     throw error;
   }
 

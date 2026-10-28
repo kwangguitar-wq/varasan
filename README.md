@@ -194,3 +194,38 @@ npm run worker:dev       # ทดสอบ Worker ในเครื่อง (D
 - ไฟล์อัปโหลดสูงสุด 300 MB ต่อไฟล์ (บน Workers จำกัด 64 MB เพราะหน่วยความจำของ isolate)
 - ระบบใช้ session cookie แบบ HttpOnly; ตั้ง `COOKIE_SECURE=false` เฉพาะเมื่อรันบน HTTP ในเครื่อง
 - ข้อมูลตัวอย่างและสถิติถูกสร้างใหม่ได้ด้วย `npm run seed`
+
+## ดีพลอยบน Vercel (จาก GitHub)
+
+โค้ดชุดนี้พร้อมให้ Vercel ดีพลอยจาก repository ที่เชื่อมกับ Freebuff โดยตรง:
+frontend ถูก build เป็น static (Vite → `dist/`) และ API ทั้งหมดรันเป็น Vercel
+Function ตัวเดียวที่ `api/index.mjs` (Express ตัวเดิม) — ไม่ต้องแก้ route ใด ๆ
+
+เนื่องจาก Vercel Function อ่านไฟล์ใน bundle ได้อย่างเดียวและไม่มีดิสก์ถาวร
+ระบบจึงใช้บริการคลาวด์แทนไฟล์ในเครื่อง:
+
+| ส่วน | บน Vercel | ตัวแปรสภาพแวดล้อม |
+| --- | --- | --- |
+| ฐานข้อมูล | Turso (libSQL — ภาษา SQL เดียวกับ SQLite) | `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` |
+| ไฟล์อัปโหลด/ปก/PDF | Vercel Blob | `BLOB_READ_WRITE_TOKEN` |
+
+### ขั้นตอน
+
+1. สร้างฐานข้อมูล Turso ผ่าน Vercel → Storage (Marketplace) แล้วเชื่อมกับโปรเจกต์
+   — Vercel จะใส่ `TURSO_DATABASE_URL` และ `TURSO_AUTH_TOKEN` ให้เอง
+2. สร้าง Blob store (Vercel → Storage → Blob) แล้วเชื่อมกับโปรเจกต์
+   — จะได้ `BLOB_READ_WRITE_TOKEN`
+3. Import repository นี้ใน Vercel แล้วกด Deploy
+
+`vercel.json` ตั้งค่า build ไว้เป็น `npm run build && node scripts/seed-cloud.mjs`
+ตัว seed จะสร้าง schema และข้อมูลตัวอย่าง (ผู้ใช้ 6 คน, หมวดหมู่, หนังสือ 25 เล่ม
+พร้อมไฟล์ PDF/ePub) ลง Turso และคัดลอกไฟล์ขึ้น Blob **ครั้งเดียว** — ถ้าฐานข้อมูลมี
+ผู้ใช้อยู่แล้วจะข้ามทันที จึงไม่เปลืองการเขียนซ้ำทุกครั้งที่ build
+
+### ข้อจำกัดที่ต่างจากเวอร์ชัน Cloudflare/เครื่อง Local
+
+- Request/response ของ Vercel Function จำกัด **4.5 MB** — การอัปโหลดหนังสือขนาดใหญ่
+  จากหน้าแอดมินจึงยังทำบน Vercel ไม่ได้ (อ่าน/ดาวน์โหลดไฟล์ตัวอย่างทำได้ปกติ)
+- ไฟล์ที่ใหญ่กว่า 4 MB จะถูกส่งต่อ (302) ไปยัง URL ของ Blob โดยตรง
+- ฐานข้อมูลต้องมีผู้ใช้อย่างน้อย 1 คนจากขั้นตอน seed; ถ้าไม่ได้ตั้งค่า
+  `TURSO_DATABASE_URL` ฝั่ง API จะตอบ 503 พร้อมข้อความบอกการตั้งค่า
