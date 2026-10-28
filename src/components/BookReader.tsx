@@ -7,7 +7,7 @@ import { playPageTurn } from '../lib/paperSound';
 /** Slow enough to read as paper being lifted, not as a screen flip. */
 const TURN_MS = 1150;
 const COVER_MS = 900;
-const HINT_KEY = 'lumen-book-hint';
+const HINT_KEY = 'nakhonmaesot-book-hint';
 
 export interface BookMeta {
   publisher?: string | null;
@@ -427,7 +427,7 @@ export function BookReader({
 
   const frontMatter = (
     <div className="book-frontmatter">
-      <span className="book-frontmatter-kicker">Lumen Library</span>
+      <span className="book-frontmatter-kicker">Nakhonmaesot Library</span>
       <h3>{title}</h3>
       {author ? <p className="book-frontmatter-author">{author}</p> : null}
       <span className="book-frontmatter-rule" />
@@ -555,7 +555,7 @@ export function BookReader({
                     <img src={coverUrl} alt={`ปก ${title}`} onError={() => setCoverBroken(true)} draggable={false} />
                   ) : (
                     <div className="book-cover-fallback">
-                      <span>Lumen Library</span>
+                      <span>Nakhonmaesot Library</span>
                       <strong>{title}</strong>
                     </div>
                   )}

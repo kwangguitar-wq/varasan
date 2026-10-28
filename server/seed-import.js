@@ -160,14 +160,31 @@ async function rowCounts(env) {
   return { users: row?.users ?? 0, pubs: row?.pubs ?? 0 };
 }
 
-/** True when every table already holds exactly what the snapshot ships. */
+/**
+ * True when the database already holds at least everything the snapshot ships.
+ *
+ * Counts are compared with `>=` rather than `===`: readers add analytics events,
+ * reading progress and bookmarks, and admins upload publications with their own
+ * keywords and tags, so a complete database rarely matches the snapshot exactly.
+ * An exact comparison read that drift as a half-finished import, and the
+ * recovery path for one drops the data tables and writes all ~3k snapshot rows
+ * again — which is what burned through the daily written-rows allowance and got
+ * the site paused. To deliberately re-apply edited demo data, clear the data
+ * tables first so the counts fall short of the snapshot.
+ */
+// analytics_events is trimmed by a moving 14-day window when the snapshot is
+// packed, so its row count legitimately differs from one pack to the next and
+// cannot be compared. Dropping it is safe for detecting a cut-off import: it is
+// the last table in the snapshot, after every other table has loaded.
+const COUNT_UNSTABLE_TABLES = new Set(['analytics_events']);
+
 async function snapshotLoaded(env, counts) {
-  const entries = Object.entries(counts ?? {});
+  const entries = Object.entries(counts ?? {}).filter(([table]) => !COUNT_UNSTABLE_TABLES.has(table));
   if (!entries.length) return false;
   try {
     for (const [table, expected] of entries) {
       const row = await env.DB.prepare(`SELECT COUNT(*) AS n FROM "${table}"`).first();
-      if ((row?.n ?? -1) !== expected) return false;
+      if ((row?.n ?? -1) < expected) return false;
     }
     return true;
   } catch {
@@ -185,7 +202,7 @@ function parseProgress(raw) {
 
 async function ensureSeedData(env, snapshot) {
   if (!snapshot) {
-    console.warn('[lumen:seed] no bundled snapshot; starting empty');
+    console.warn('[nakhonmaesot:seed] no bundled snapshot; starting empty');
     return;
   }
   const fingerprint = fingerprintOf(snapshot);
@@ -197,13 +214,13 @@ async function ensureSeedData(env, snapshot) {
   // The snapshot only ships demo accounts: never wipe a database that has more.
   const seededUsers = snapshot.counts?.users;
   if (seededUsers !== undefined && current.users > seededUsers) {
-    console.warn(`[lumen:seed] keeping ${current.users} user(s); snapshot only ships ${seededUsers}`);
+    console.warn(`[nakhonmaesot:seed] keeping ${current.users} user(s); snapshot only ships ${seededUsers}`);
     return;
   }
 
   // The same rows may already be in place when only the packed layout changed.
   if (await snapshotLoaded(env, snapshot.counts)) {
-    console.log('[lumen:seed] snapshot already loaded; recording fingerprint only');
+    console.log('[nakhonmaesot:seed] snapshot already loaded; recording fingerprint only');
     await writeState(env, FINGERPRINT_KEY, fingerprint);
     await clearState(env, PROGRESS_KEY);
     return;
@@ -212,7 +229,7 @@ async function ensureSeedData(env, snapshot) {
   let progress = parseProgress(state.get(PROGRESS_KEY));
   if (progress?.fingerprint !== fingerprint) progress = null;
   if (progress && Date.now() - (progress.at ?? 0) < CLAIM_MS) {
-    console.log('[lumen:seed] import already running in another isolate');
+    console.log('[nakhonmaesot:seed] import already running in another isolate');
     return;
   }
 
@@ -220,7 +237,7 @@ async function ensureSeedData(env, snapshot) {
   if (!cursor && (current.users > 0 || current.pubs > 0)) {
     // An interrupted or older import leaves partial rows behind; drop the data
     // tables and start from a clean snapshot.
-    console.log(`[lumen:seed] replacing partial snapshot (${current.pubs} publication(s))`);
+    console.log(`[nakhonmaesot:seed] replacing partial snapshot (${current.pubs} publication(s))`);
     await env.DB.batch(DATA_TABLES.map((name) => env.DB.prepare(`DROP TABLE IF EXISTS ${name}`)));
     await ensureSchema(env);
   }
@@ -242,7 +259,7 @@ async function ensureSeedData(env, snapshot) {
   const statements = splitStatements(sql).filter(
     (statement) => !/^CREATE\s+(TABLE|INDEX|UNIQUE)/i.test(statement),
   );
-  if (cursor) console.log(`[lumen:seed] resuming import at ${cursor}/${statements.length}`);
+  if (cursor) console.log(`[nakhonmaesot:seed] resuming import at ${cursor}/${statements.length}`);
   let applied = 0;
   let skipped = 0;
   for (let i = cursor; i < statements.length; i += BATCH_STATEMENTS) {
@@ -268,7 +285,7 @@ async function ensureSeedData(env, snapshot) {
       }),
     );
   }
-  console.log(`[lumen:seed] imported ${applied} statement(s), skipped ${skipped}`);
+  console.log(`[nakhonmaesot:seed] imported ${applied} statement(s), skipped ${skipped}`);
 
   await env.DB.prepare('DELETE FROM sessions').run();
 
@@ -277,7 +294,7 @@ async function ensureSeedData(env, snapshot) {
     const row = await env.DB.prepare(`SELECT COUNT(*) AS n FROM "${table}"`).first();
     if ((row?.n ?? 0) !== expected) mismatch.push(`${table}=${row?.n ?? 0}/${expected}`);
   }
-  if (mismatch.length) console.warn(`[lumen:seed] row count mismatch: ${mismatch.join(', ')}`);
+  if (mismatch.length) console.warn(`[nakhonmaesot:seed] row count mismatch: ${mismatch.join(', ')}`);
 
   await writeState(env, FINGERPRINT_KEY, fingerprint);
   await clearState(env, PROGRESS_KEY);
@@ -309,5 +326,5 @@ async function ensureSeedUploads(env, snapshot) {
       }),
     );
   }
-  console.log(`[lumen:seed] copied ${missing.length} upload file(s) into storage`);
+  console.log(`[nakhonmaesot:seed] copied ${missing.length} upload file(s) into storage`);
 }

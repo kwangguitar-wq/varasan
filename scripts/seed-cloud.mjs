@@ -12,26 +12,26 @@ import { objectExists, putObject } from '../server/storage.js';
 
 const settings = cloudConfig();
 if (!isCloudConfigured(settings)) {
-  console.log('[lumen:seed] TURSO_DATABASE_URL ยังไม่ได้ตั้งค่า — ข้ามการ seed ข้อมูลคลาวด์');
+  console.log('[nakhonmaesot:seed] TURSO_DATABASE_URL ยังไม่ได้ตั้งค่า — ข้ามการ seed ข้อมูลคลาวด์');
   process.exit(0);
 }
 
 const client = configureCloud(settings);
 const created = await ensureCloudSchema(client);
-console.log(`[lumen:seed] schema ${created ? 'created' : 'already present'}`);
+console.log(`[nakhonmaesot:seed] schema ${created ? 'created' : 'already present'}`);
 
 const users = (await db.prepare('SELECT COUNT(*) AS n FROM users').get())?.n ?? 0;
 if (users > 0) {
-  console.log(`[lumen:seed] พบผู้ใช้ ${users} คนในฐานข้อมูลแล้ว — ข้ามการ seed`);
+  console.log(`[nakhonmaesot:seed] พบผู้ใช้ ${users} คนในฐานข้อมูลแล้ว — ข้ามการ seed`);
 } else {
   const started = Date.now();
   const { seedDatabase } = await import('../server/seed.js');
   await seedDatabase();
-  console.log(`[lumen:seed] สร้างข้อมูลตัวอย่างเสร็จใน ${((Date.now() - started) / 1000).toFixed(1)}s`);
+  console.log(`[nakhonmaesot:seed] สร้างข้อมูลตัวอย่างเสร็จใน ${((Date.now() - started) / 1000).toFixed(1)}s`);
 }
 
 if (!settings.blobToken) {
-  console.log('[lumen:seed] ไม่ได้ตั้งค่า BLOB_READ_WRITE_TOKEN — ไฟล์อัปโหลดจะไม่ถูกคัดลอกขึ้น Blob');
+  console.log('[nakhonmaesot:seed] ไม่ได้ตั้งค่า BLOB_READ_WRITE_TOKEN — ไฟล์อัปโหลดจะไม่ถูกคัดลอกขึ้น Blob');
   process.exit(0);
 }
 
@@ -51,4 +51,4 @@ for (const key of keys) {
   await putObject(key, bytes);
   copied += 1;
 }
-console.log(`[lumen:seed] คัดลอกไฟล์ขึ้น Blob ${copied}/${keys.length} ไฟล์`);
+console.log(`[nakhonmaesot:seed] คัดลอกไฟล์ขึ้น Blob ${copied}/${keys.length} ไฟล์`);

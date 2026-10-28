@@ -1,5 +1,5 @@
 /* ============================================================
-   Lumen Library — service worker
+   Nakhonmaesot Library — service worker
    - app shell cache: เปิดแอปได้แม้ไม่มีเน็ตในเส้นทางที่เคยเข้าชม
    - runtime cache: JS/CSS/ฟอนต์/ไอคอน (cache-first)
    - ไม่แคช /api เลย เพื่อไม่ให้ข้อมูลบัญชีของผู้ใช้ค้างในเครื่อง
@@ -8,9 +8,9 @@
 const IS_DEV = new URL(self.location.href).searchParams.get('env') === 'dev';
 const VERSION = 'v1';
 
-const SHELL_CACHE = `lumen-shell-${VERSION}`;
-const ASSET_CACHE = `lumen-asset-${VERSION}`;
-const MEDIA_CACHE = `lumen-media-${VERSION}`;
+const SHELL_CACHE = `nakhonmaesot-shell-${VERSION}`;
+const ASSET_CACHE = `nakhonmaesot-asset-${VERSION}`;
+const MEDIA_CACHE = `nakhonmaesot-media-${VERSION}`;
 
 const APP_SHELL_KEY = '/__app-shell';
 const MEDIA_LIMIT = 60;
@@ -47,7 +47,7 @@ self.addEventListener('activate', (event) => {
     (async () => {
       const keep = new Set([SHELL_CACHE, ASSET_CACHE, MEDIA_CACHE]);
       const names = await caches.keys();
-      await Promise.all(names.filter((name) => name.startsWith('lumen-') && !keep.has(name)).map((name) => caches.delete(name)));
+      await Promise.all(names.filter((name) => name.startsWith('nakhonmaesot-') && !keep.has(name)).map((name) => caches.delete(name)));
       await self.clients.claim();
     })(),
   );

@@ -146,12 +146,12 @@ const cacheInfo = await page.evaluate(async () => {
   }
   return { names, detail };
 });
-const shellCount = cacheInfo.detail['lumen-shell-v1']?.count ?? 0;
-const assetCount = cacheInfo.detail['lumen-asset-v1']?.count ?? 0;
+const shellCount = cacheInfo.detail['nakhonmaesot-shell-v1']?.count ?? 0;
+const assetCount = cacheInfo.detail['nakhonmaesot-asset-v1']?.count ?? 0;
 check('แคช app shell ถูกสร้าง', shellCount > 0, `shell ${shellCount} รายการ`);
 check('แคช JS/CSS/ฟอนต์ถูกสร้าง', assetCount > 2, `asset ${assetCount} รายการ`);
 const appShellCached = await page.evaluate(async () => {
-  const cache = await caches.open('lumen-shell-v1');
+  const cache = await caches.open('nakhonmaesot-shell-v1');
   return Boolean(await cache.match('/__app-shell'));
 });
 check('มี HTML app shell เก็บไว้จริง', appShellCached);

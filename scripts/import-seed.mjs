@@ -71,7 +71,7 @@ export async function importSeed(env) {
       applied += 1;
     } catch (error) {
       failed += 1;
-      console.error('[lumen:seed] statement failed:', error?.message, statement.slice(0, 120));
+      console.error('[nakhonmaesot:seed] statement failed:', error?.message, statement.slice(0, 120));
     }
   }
 

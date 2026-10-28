@@ -10,7 +10,7 @@ import {
   wasJustInstalled,
 } from '../lib/pwa';
 
-const DISMISS_KEY = 'lumen.install.dismissedAt';
+const DISMISS_KEY = 'nakhonmaesot.install.dismissedAt';
 const DISMISS_DAYS = 7;
 
 function readDismissedAt() {
@@ -77,7 +77,7 @@ export function InstallPrompt() {
   if (!visible) return null;
 
   return (
-    <aside className="pwa-install" role="dialog" aria-live="polite" aria-label="ติดตั้งแอป Lumen Library">
+    <aside className="pwa-install" role="dialog" aria-live="polite" aria-label="ติดตั้งแอป Nakhonmaesot Library">
       <button type="button" className="pwa-install-close" onClick={dismiss} aria-label="ปิดคำแนะนำการติดตั้ง">
         <Icon name="close" size={16} />
       </button>
@@ -85,7 +85,7 @@ export function InstallPrompt() {
         <Icon name="download" size={20} />
       </span>
       <div className="pwa-install-body">
-        <strong>ติดตั้ง Lumen Library</strong>
+        <strong>ติดตั้ง Nakhonmaesot Library</strong>
         {ios ? (
           <>
             <p>เพิ่มทางลัดบนหน้าจอโฮมเพื่อเปิดอ่านเต็มจอ และกลับมาใช้งานได้เร็วขึ้น</p>

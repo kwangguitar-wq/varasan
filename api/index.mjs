@@ -83,7 +83,7 @@ export default async function handler(req, res) {
   try {
     status = await bootstrap();
   } catch (error) {
-    console.error('[lumen:vercel]', error);
+    console.error('[nakhonmaesot:vercel]', error);
     res.statusCode = 503;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.end(JSON.stringify({ error: 'เชื่อมต่อฐานข้อมูลไม่สำเร็จ — กรุณาตรวจสอบการตั้งค่า' }));

@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'lumen-book-sound';
+const STORAGE_KEY = 'nakhonmaesot-book-sound';
 
 /**
  * The page-turn sound is synthesised with the Web Audio API instead of shipped as a

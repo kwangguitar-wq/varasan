@@ -6,9 +6,9 @@ import { Icon } from '../components/Icons';
 import { Logo } from '../components/Shell';
 
 const DEMO_ACCOUNTS = [
-  { role: 'ผู้ดูแลระบบ', email: 'admin@lumen.app', password: 'Lumen@2026', icon: 'shield' as const },
-  { role: 'บรรณาธิการ', email: 'editor@lumen.app', password: 'Lumen@2026', icon: 'edit' as const },
-  { role: 'ผู้อ่าน', email: 'reader@lumen.app', password: 'Lumen@2026', icon: 'user' as const },
+  { role: 'ผู้ดูแลระบบ', email: 'admin@nakhonmaesot.app', password: 'Nakhonmaesot@2026', icon: 'shield' as const },
+  { role: 'บรรณาธิการ', email: 'editor@nakhonmaesot.app', password: 'Nakhonmaesot@2026', icon: 'edit' as const },
+  { role: 'ผู้อ่าน', email: 'reader@nakhonmaesot.app', password: 'Nakhonmaesot@2026', icon: 'user' as const },
 ];
 
 export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
@@ -84,7 +84,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
           <span className="auth-quote-mark">“</span>
           <h2>ความรู้ไม่ควรถูกจำกัดด้วยเวลาและสถานที่</h2>
           <p>
-            Lumen Library รวมวารสาร งานวิจัย และหนังสืออิเล็กทรอนิกส์ไว้ในที่เดียว
+            Nakhonmaesot Library รวมวารสาร งานวิจัย และหนังสืออิเล็กทรอนิกส์ไว้ในที่เดียว
             พร้อมเครื่องมือสืบค้นที่ออกแบบมาเพื่อคนไทย
           </p>
           <div className="auth-panel-stats">
@@ -103,7 +103,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
             <span className="auth-mini-card auth-mini-3" />
           </div>
         </div>
-        <p className="auth-panel-footer">© {new Date().getFullYear()} Lumen Library · เพื่อการเรียนรู้ตลอดชีวิต</p>
+        <p className="auth-panel-footer">© {new Date().getFullYear()} Nakhonmaesot Library · เพื่อการเรียนรู้ตลอดชีวิต</p>
       </div>
 
       <div className="auth-form-side">
@@ -231,7 +231,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
                   </button>
                 ))}
               </div>
-              <small className="demo-hint">เลือกบัญชีเพื่อเติมข้อมูลอัตโนมัติ · รหัสผ่าน Lumen@2026</small>
+              <small className="demo-hint">เลือกบัญชีเพื่อเติมข้อมูลอัตโนมัติ · รหัสผ่าน Nakhonmaesot@2026</small>
             </div>
           ) : null}
 

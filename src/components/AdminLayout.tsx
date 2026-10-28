@@ -78,7 +78,7 @@ export function AdminLayout({
       <div className="admin-main">
         <header className="admin-header">
           <div>
-            <span className="eyebrow">Lumen Console</span>
+            <span className="eyebrow">Nakhonmaesot Console</span>
             <h1>{title}</h1>
             {description ? <p>{description}</p> : null}
           </div>

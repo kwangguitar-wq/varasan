@@ -17,8 +17,8 @@ const FONT_BOLD = path.join(ROOT, 'server/assets/Sarabun-Bold.ttf');
 const USERS = [
   {
     name: 'ดร. ณัฐฐิญา วรรณศิลป์',
-    email: 'admin@lumen.app',
-    password: 'Lumen@2026',
+    email: 'admin@nakhonmaesot.app',
+    password: 'Nakhonmaesot@2026',
     role: 'admin',
     affiliation: 'สำนักหอสมุดกลาง มหาวิทยาลัยศิลปากร',
     bio: 'ผู้ดูแลระบบและผู้อำนวยการฝ่ายทรัพยากรสารสนเทศ',
@@ -26,8 +26,8 @@ const USERS = [
   },
   {
     name: 'ปวีณา สุขเจริญ',
-    email: 'editor@lumen.app',
-    password: 'Lumen@2026',
+    email: 'editor@nakhonmaesot.app',
+    password: 'Nakhonmaesot@2026',
     role: 'editor',
     affiliation: 'กองบรรณาธิการวารสารมนุษยศาสตร์',
     bio: 'บรรณาธิการวารสารและผู้ประสานงานงานวิจัย',
@@ -35,16 +35,16 @@ const USERS = [
   },
   {
     name: 'ธนกฤต ใจดี',
-    email: 'reader@lumen.app',
-    password: 'Lumen@2026',
+    email: 'reader@nakhonmaesot.app',
+    password: 'Nakhonmaesot@2026',
     role: 'reader',
     affiliation: 'นักศึกษาระดับบัณฑิตศึกษา',
     bio: 'สนใจงานวิจัยด้านเมือง การออกแบบ และการศึกษา',
     hue: 22,
   },
-  { name: 'สุชาดา พงษ์พันธ์', email: 'suchada@lumen.app', password: 'Lumen@2026', role: 'reader', affiliation: 'อาจารย์คณะครุศาสตร์', hue: 210 },
-  { name: 'กิตติพงษ์ แก้วมณี', email: 'kittipong@lumen.app', password: 'Lumen@2026', role: 'reader', affiliation: 'นักวิจัยอิสระ', hue: 128 },
-  { name: 'อรวรรณ ชัยวัฒน์', email: 'orawan@lumen.app', password: 'Lumen@2026', role: 'reader', affiliation: 'บรรณารักษ์', hue: 312 },
+  { name: 'สุชาดา พงษ์พันธ์', email: 'suchada@nakhonmaesot.app', password: 'Nakhonmaesot@2026', role: 'reader', affiliation: 'อาจารย์คณะครุศาสตร์', hue: 210 },
+  { name: 'กิตติพงษ์ แก้วมณี', email: 'kittipong@nakhonmaesot.app', password: 'Nakhonmaesot@2026', role: 'reader', affiliation: 'นักวิจัยอิสระ', hue: 128 },
+  { name: 'อรวรรณ ชัยวัฒน์', email: 'orawan@nakhonmaesot.app', password: 'Nakhonmaesot@2026', role: 'reader', affiliation: 'บรรณารักษ์', hue: 312 },
 ];
 
 const CATEGORIES = [
@@ -380,7 +380,7 @@ async function makePdf(pub, sections, accent, outPath) {
   cover.drawRectangle({ x: 40, y: 128, width: 60, height: 2, color: tint });
   cover.drawText(String(pub.author).slice(0, 52), { x: 40, y: 98, size: 13, font: bold, color: rgb(1, 1, 1), opacity: 0.92 });
   cover.drawText(`${pub.publisher} · พ.ศ. ${pub.year}`, { x: 40, y: 78, size: 9, font: regular, color: rgb(1, 1, 1), opacity: 0.7 });
-  cover.drawText('LUMEN LIBRARY', { x: 40, y: 38, size: 8, font: bold, color: rgb(1, 1, 1), opacity: 0.55 });
+  cover.drawText('NAKHONMAESOT LIBRARY', { x: 40, y: 38, size: 8, font: bold, color: rgb(1, 1, 1), opacity: 0.55 });
 
   let page = doc.addPage([PAGE_W, PAGE_H]);
   let cursor = PAGE_H - 96;
@@ -429,7 +429,7 @@ async function makePdf(pub, sections, accent, outPath) {
 
   const pages = doc.getPages();
   pages.slice(1).forEach((current, index) => {
-    current.drawText('LUMEN LIBRARY', { x: MARGIN, y: 24, size: 6.5, font: regular, color: muted });
+    current.drawText('NAKHONMAESOT LIBRARY', { x: MARGIN, y: 24, size: 6.5, font: regular, color: muted });
     current.drawText(`${index + 2} / ${pages.length}`, { x: PAGE_W - MARGIN - 34, y: 24, size: 7, font: regular, color: muted });
   });
 
@@ -586,7 +586,7 @@ export async function seedDatabase() {
       categoryIds[pub.category],
       status,
       pub.featured ?? 0,
-      userIds[status === 'draft' ? (order % 2 === 0 ? 'reader@lumen.app' : 'editor@lumen.app') : 'editor@lumen.app'],
+      userIds[status === 'draft' ? (order % 2 === 0 ? 'reader@nakhonmaesot.app' : 'editor@nakhonmaesot.app') : 'editor@nakhonmaesot.app'],
       createdAt,
       createdAt,
     );
@@ -723,7 +723,7 @@ export async function seedDatabase() {
     );
   }
 
-  const readerId = userIds['reader@lumen.app'];
+  const readerId = userIds['reader@nakhonmaesot.app'];
   const progressEntries = published.slice(0, 5);
   for (const [index, entry] of progressEntries.entries()) {
     await db
@@ -740,7 +740,7 @@ export async function seedDatabase() {
   }
 
   console.log(
-    `[lumen] seeded ${USERS.length} users, ${CATEGORIES.length} categories, ${PUBLICATIONS.length} publications`,
+    `[nakhonmaesot] seeded ${USERS.length} users, ${CATEGORIES.length} categories, ${PUBLICATIONS.length} publications`,
   );
 }
 
@@ -756,7 +756,7 @@ if (invokedDirectly) {
 
   const exists = (await db.prepare('SELECT COUNT(*) AS n FROM users').get()).n;
   if (exists && !process.argv.includes('--force')) {
-    console.log('[lumen] database already seeded — use --force to reset');
+    console.log('[nakhonmaesot] database already seeded — use --force to reset');
   } else {
     if (process.argv.includes('--force')) {
       fs.rmSync(path.join(UPLOAD_DIR, 'books'), { recursive: true, force: true });

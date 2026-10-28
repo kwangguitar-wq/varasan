@@ -26,7 +26,7 @@ export function Logo({ compact = false }: { compact?: boolean }) {
       </span>
       {compact ? null : (
         <span className="brand-text">
-          <strong>LUMEN</strong>
+          <strong>NAKHONMAESOT</strong>
           <small>LIBRARY</small>
         </span>
       )}
@@ -119,7 +119,7 @@ export function SiteHeader() {
   return (
     <header className="site-header">
       <div className="header-inner">
-        <Link to="/" className="brand-link" aria-label="Lumen Library หน้าแรก">
+        <Link to="/" className="brand-link" aria-label="Nakhonmaesot Library หน้าแรก">
           <Logo />
         </Link>
         <nav className="desktop-nav" aria-label="เมนูหลัก">
@@ -240,7 +240,7 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="footer-bottom">
-        <span>© {new Date().getFullYear()} Lumen Library · สงวนลิขสิทธิ์</span>
+        <span>© {new Date().getFullYear()} Nakhonmaesot Library · สงวนลิขสิทธิ์</span>
         <span>ออกแบบเพื่อการเข้าถึง · รองรับ Android และ iOS</span>
       </div>
     </footer>

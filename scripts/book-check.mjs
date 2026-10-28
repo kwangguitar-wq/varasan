@@ -202,13 +202,13 @@ try {
     if (hasSwitch) {
       await soundSwitch.click();
       const off = await page.evaluate(() => ({
-        stored: localStorage.getItem('lumen-book-sound'),
+        stored: localStorage.getItem('nakhonmaesot-book-sound'),
         pressed: document.querySelector('button[aria-label="เปิดเสียงพลิกหน้า"]')?.getAttribute('aria-pressed'),
       }));
       check('PDF: switch mutes the page-turn sound', off.stored === 'off' && off.pressed === 'false', JSON.stringify(off));
       await page.click('button[aria-label="เปิดเสียงพลิกหน้า"]');
       const backOn = await page.evaluate(() => ({
-        stored: localStorage.getItem('lumen-book-sound'),
+        stored: localStorage.getItem('nakhonmaesot-book-sound'),
         pressed: document.querySelector('button[aria-label="ปิดเสียงพลิกหน้า"]')?.getAttribute('aria-pressed'),
       }));
       check('PDF: switch unmutes the page-turn sound', backOn.stored === 'on' && backOn.pressed === 'true', JSON.stringify(backOn));

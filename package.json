@@ -1,9 +1,9 @@
 {
-  "name": "lumen-library",
+  "name": "nakhonmaesot-library",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Lumen Library — ศูนย์รวมวารสารและหนังสืออิเล็กทรอนิกส์",
+  "description": "Nakhonmaesot Library — ศูนย์รวมวารสารและหนังสืออิเล็กทรอนิกส์",
   "scripts": {
     "dev": "concurrently -n api,web -c cyan,magenta \"node --watch server/index.js\" \"vite\"",
     "dev:api": "node --watch server/index.js",

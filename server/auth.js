@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import { db, nowIso } from './db.js';
 
-const SESSION_COOKIE = 'lumen_session';
+const SESSION_COOKIE = 'nakhonmaesot_session';
 const SESSION_DAYS = 30;
 
 export function hashPassword(password) {

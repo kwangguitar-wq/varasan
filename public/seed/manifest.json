@@ -1,0 +1,49 @@
+{
+  "chunks": [
+    "db-000.gz"
+  ],
+  "uploads": [
+    "books/34/book.pdf",
+    "books/35/book.pdf",
+    "books/36/book.pdf",
+    "books/37/book.pdf",
+    "books/38/book.pdf",
+    "books/39/book.pdf",
+    "books/40/book.pdf",
+    "books/41/book.pdf",
+    "books/42/book.pdf",
+    "books/43/book.pdf",
+    "books/44/book.epub",
+    "books/44/chapters.json",
+    "books/45/book.pdf",
+    "books/46/book.pdf",
+    "books/47/book.pdf",
+    "covers/seed-34.svg",
+    "covers/seed-35.svg",
+    "covers/seed-36.svg",
+    "covers/seed-37.svg",
+    "covers/seed-38.svg",
+    "covers/seed-39.svg",
+    "covers/seed-40.svg",
+    "covers/seed-41.svg",
+    "covers/seed-42.svg",
+    "covers/seed-43.svg",
+    "covers/seed-44.svg",
+    "covers/seed-45.svg",
+    "covers/seed-46.svg",
+    "covers/seed-47.svg"
+  ],
+  "rows": 3218,
+  "counts": {
+    "users": 6,
+    "categories": 6,
+    "publications": 14,
+    "tags": 48,
+    "publication_tags": 54,
+    "keywords": 2022,
+    "reading_progress": 5,
+    "bookmarks": 2,
+    "analytics_events": 1061
+  },
+  "sqlBytes": 471676
+}

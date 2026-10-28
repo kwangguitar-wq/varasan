@@ -17,7 +17,7 @@ export function createApp() {
   app.use(attachUser);
 
   app.get('/api/health', (_req, res) => {
-    res.json({ ok: true, service: 'lumen-library', time: new Date().toISOString() });
+    res.json({ ok: true, service: 'nakhonmaesot-library', time: new Date().toISOString() });
   });
 
   app.use('/api/auth', authRoutes);
@@ -32,7 +32,7 @@ export function createApp() {
   });
 
   app.use((error, _req, res, _next) => {
-    console.error('[lumen]', error);
+    console.error('[nakhonmaesot]', error);
     if (res.headersSent) return;
     const status = error.status || (error.code === 'LIMIT_FILE_SIZE' ? 413 : 500);
     res.status(status).json({

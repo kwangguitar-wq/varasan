@@ -5,7 +5,7 @@ import { gzipSync, strToU8 } from 'fflate';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const OUT = path.join(ROOT, 'public', 'seed');
-const DB_PATH = process.env.DATABASE_PATH ?? path.join(ROOT, 'data', 'lumen.db');
+const DB_PATH = process.env.DATABASE_PATH ?? path.join(ROOT, 'data', 'nakhonmaesot.db');
 const UPLOAD_DIR = path.join(ROOT, 'data', 'uploads');
 const MAX_TEXT = 60_000;
 const CHUNK_BYTES = 320 * 1024;

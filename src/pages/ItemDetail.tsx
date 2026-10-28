@@ -32,7 +32,7 @@ export function ItemDetail() {
         setPublication(data.publication);
         setRelated(data.related);
         setBookmarked(Boolean(data.publication.bookmarked));
-        const key = `lumen-view-${data.publication.id}`;
+        const key = `nakhonmaesot-view-${data.publication.id}`;
         if (!viewTracked.current && !sessionStorage.getItem(key)) {
           viewTracked.current = true;
           sessionStorage.setItem(key, '1');
@@ -399,7 +399,7 @@ export function ItemDetail() {
               <div className="aside-card aside-publisher">
                 <span className="eyebrow">จัดทำโดย</span>
                 <h3>{publication.publisher}</h3>
-                <p>เผยแพร่ผ่าน Lumen Library</p>
+                <p>เผยแพร่ผ่าน Nakhonmaesot Library</p>
               </div>
             ) : null}
           </aside>

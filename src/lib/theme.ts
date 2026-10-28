@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 type Theme = 'light' | 'dark';
 
 export function initTheme() {
-  const stored = localStorage.getItem('lumen-theme') as Theme | null;
+  const stored = localStorage.getItem('nakhonmaesot-theme') as Theme | null;
   const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
   document.documentElement.dataset.theme = stored ?? (prefersDark ? 'dark' : 'light');
 }
@@ -16,7 +16,7 @@ export function useTheme() {
     setTheme((current) => {
       const next: Theme = current === 'dark' ? 'light' : 'dark';
       document.documentElement.dataset.theme = next;
-      localStorage.setItem('lumen-theme', next);
+      localStorage.setItem('nakhonmaesot-theme', next);
       return next;
     });
   }, []);

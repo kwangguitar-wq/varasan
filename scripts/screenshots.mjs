@@ -28,8 +28,8 @@ await shot('home-hero', { fullPage: false, wait: 200 });
 // Login flow
 await page.goto(`${BASE}/login`, { waitUntil: 'networkidle' });
 await shot('login');
-await page.fill('input[type=email]', 'admin@lumen.app');
-await page.fill('input[type=password]', 'Lumen@2026');
+await page.fill('input[type=email]', 'admin@nakhonmaesot.app');
+await page.fill('input[type=password]', 'Nakhonmaesot@2026');
 await page.click('button[type=submit]');
 await page.waitForTimeout(1500);
 console.log('after login url:', page.url());

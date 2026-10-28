@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 900" width="640" height="900" role="img" aria-label="เรื่องเล่าจากห้องสมุด: 25 ปีแห่งการเรียนรู้">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#047857" />
+      <stop offset="100%" stop-color="#052e16" />
+    </linearGradient>
+    <radialGradient id="glow" cx="0.8" cy="0.12" r="0.8">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.32" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+    <pattern id="grain" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(24)">
+      <rect width="6" height="6" fill="transparent" />
+      <circle cx="1" cy="1" r="0.6" fill="#ecfdf5" fill-opacity="0.16" />
+    </pattern>
+  </defs>
+  <rect width="640" height="900" fill="url(#g)" />
+  <rect width="640" height="900" fill="url(#grain)" />
+  <rect width="640" height="900" fill="url(#glow)" />
+  <g opacity="0.16" fill="none" stroke="#ecfdf5" stroke-width="2">
+    <circle cx="560" cy="150" r="170" />
+    <circle cx="560" cy="150" r="120" />
+    <circle cx="560" cy="150" r="70" />
+    <path d="M-40 780 C 160 700, 300 860, 700 720" />
+    <path d="M-40 830 C 160 750, 300 910, 700 770" />
+  </g>
+  <rect x="70" y="82" width="112" height="38" rx="19" fill="#ecfdf5" fill-opacity="0.16" stroke="#ecfdf5" stroke-opacity="0.35" />
+  <text x="87" y="107" font-family="Inter, 'IBM Plex Sans Thai', sans-serif" font-size="15" letter-spacing="3" fill="#ecfdf5" fill-opacity="0.92">E-BOOK</text>
+  <text x="70" y="190" font-family="'IBM Plex Sans Thai', sans-serif" font-size="20" fill="#ecfdf5" fill-opacity="0.7">หนังสืออิเล็กทรอนิกส์</text>
+  <text font-family="'IBM Plex Sans Thai', 'Noto Sans Thai', sans-serif" font-weight="600" font-size="58" fill="#ecfdf5" letter-spacing="-0.5"><tspan x="70" y="466">เรื่องเล่าจากห้องส</tspan><tspan x="70" y="533">มุด: 25 ปีแห่งการเรี</tspan><tspan x="70" y="600">ยนรู้</tspan></text>
+  <line x1="70" y1="720" x2="180" y2="720" stroke="#ecfdf5" stroke-opacity="0.5" stroke-width="3" />
+  <text x="70" y="768" font-family="'IBM Plex Sans Thai', sans-serif" font-size="26" fill="#ecfdf5" fill-opacity="0.85">ฝ่ายวารสารและสารสนเทศ</text>
+  <text x="70" y="836" font-family="Inter, sans-serif" font-size="15" letter-spacing="4" fill="#ecfdf5" fill-opacity="0.45">NAKHONMAESOT LIBRARY</text>
+</svg>

@@ -53,5 +53,5 @@ if (fs.existsSync(distDir)) {
 }
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[lumen] API ready on http://localhost:${PORT}`);
+  console.log(`[nakhonmaesot] API ready on http://localhost:${PORT}`);
 });

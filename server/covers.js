@@ -109,7 +109,7 @@ export function generateCoverSvg({ title, author = '', type = 'ebook', category 
   <text font-family="'IBM Plex Sans Thai', 'Noto Sans Thai', sans-serif" font-weight="600" font-size="${titleSize}" fill="${ink}" letter-spacing="-0.5">${titleTspans}</text>
   <line x1="70" y1="720" x2="180" y2="720" stroke="${ink}" stroke-opacity="0.5" stroke-width="3" />
   <text x="70" y="768" font-family="'IBM Plex Sans Thai', sans-serif" font-size="26" fill="${ink}" fill-opacity="0.85">${escapeXml(author)}</text>
-  <text x="70" y="836" font-family="Inter, sans-serif" font-size="15" letter-spacing="4" fill="${ink}" fill-opacity="0.45">LUMEN LIBRARY</text>
+  <text x="70" y="836" font-family="Inter, sans-serif" font-size="15" letter-spacing="4" fill="${ink}" fill-opacity="0.45">NAKHONMAESOT LIBRARY</text>
 </svg>`;
 }
 

@@ -32,7 +32,7 @@ try {
     // ซ่อนแบนเนอร์ติดตั้งไม่ให้บังภาพ
     await context.addInitScript(() => {
       try {
-        localStorage.setItem('lumen.install.dismissedAt', String(Date.now()));
+        localStorage.setItem('nakhonmaesot.install.dismissedAt', String(Date.now()));
       } catch {
         /* ignore */
       }

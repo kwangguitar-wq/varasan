@@ -74,7 +74,7 @@ export function registerServiceWorker() {
     // โหมด dev ส่ง env=dev เพื่อให้ SW ไม่แคชไฟล์ HMR
     const swUrl = import.meta.env.DEV ? '/sw.js?env=dev' : '/sw.js';
     navigator.serviceWorker.register(swUrl, { scope: '/' }).catch((error) => {
-      console.warn('[lumen] ลงทะเบียน service worker ไม่สำเร็จ', error);
+      console.warn('[nakhonmaesot] ลงทะเบียน service worker ไม่สำเร็จ', error);
     });
   };
   if (document.readyState === 'complete') register();

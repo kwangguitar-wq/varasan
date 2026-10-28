@@ -1,4 +1,4 @@
-// Cloudflare Workers entry point for Lumen Library.
+// Cloudflare Workers entry point for Nakhonmaesot Library.
 // Express 5 runs on the runtime's node:http server bridge; D1 replaces
 // node:sqlite, R2 replaces the uploads directory and assets serve the SPA.
 import { handleAsNodeRequest } from 'cloudflare:node';
