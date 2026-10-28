@@ -7,6 +7,10 @@ let driver = null;
 export const runtime = {
   platform: 'node',
   maxUploadBytes: 300 * 1024 * 1024,
+  // 'multipart' sends the book in the create request. 'chunked' splits it into
+  // pieces because the host rejects bodies above a few megabytes (Vercel: 4.5 MB).
+  uploadMode: 'multipart',
+  chunkBytes: 4 * 1024 * 1024,
 };
 
 export function setDatabaseDriver(next) {
@@ -82,6 +86,26 @@ export function json(row) {
 export function placeholders(count) {
   return Array.from({ length: count }, () => '?').join(', ');
 }
+
+/** Multi-request uploads, used when a single body would exceed the host limit. */
+export const UPLOAD_SCHEMA_STATEMENTS = [
+  `CREATE TABLE IF NOT EXISTS upload_sessions (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    publication_id INTEGER NOT NULL,
+    kind TEXT NOT NULL DEFAULT 'file',
+    filename TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    parts INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS upload_parts (
+    session_id TEXT NOT NULL,
+    idx INTEGER NOT NULL,
+    size INTEGER NOT NULL,
+    PRIMARY KEY (session_id, idx)
+  )`,
+];
 
 /** Schema as individual statements: D1's exec() cannot take multi-line DDL. */
 export const SCHEMA_STATEMENTS = [
@@ -193,6 +217,7 @@ export const SCHEMA_STATEMENTS = [
     value TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )`,
+  ...UPLOAD_SCHEMA_STATEMENTS,
 ];
 
 export const SCHEMA_SQL = SCHEMA_STATEMENTS.map((sql) => `${sql};`).join('\n');

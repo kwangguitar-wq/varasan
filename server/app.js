@@ -6,6 +6,7 @@ import taxonomyRoutes from './routes/taxonomy.js';
 import userRoutes from './routes/users.js';
 import analyticsRoutes from './routes/analytics.js';
 import discoverRoutes from './routes/discover.js';
+import uploadRoutes from './routes/uploads.js';
 
 export function createApp() {
   const app = express();
@@ -20,6 +21,7 @@ export function createApp() {
     res.json({ ok: true, service: 'nakhonmaesot-library', time: new Date().toISOString() });
   });
 
+  app.use('/api/uploads', uploadRoutes);
   app.use('/api/auth', authRoutes);
   app.use('/api/publications', publicationRoutes);
   app.use('/api/users', userRoutes);

@@ -2,7 +2,7 @@
 // (libSQL) holds the database and Vercel Blob holds uploads, because a Function
 // bundle is read-only and instances do not share a disk.
 import { app } from '../server/app.js';
-import { cloudConfig, configureCloud, ensureCloudSchema, isCloudConfigured } from '../server/cloud.js';
+import { cloudConfig, configureCloud, ensureCloudSchema, ensureUploadSchema, isCloudConfigured } from '../server/cloud.js';
 import { getObject, getStorageDriver } from '../server/storage.js';
 
 // Hobby plans allow up to 60s; seeding happens at build time, so requests are
@@ -18,6 +18,7 @@ async function boot() {
   if (!isCloudConfigured(settings)) return { ready: false, reason: 'database' };
   const client = configureCloud(settings);
   await ensureCloudSchema(client);
+  await ensureUploadSchema(client);
   return { ready: true };
 }
 

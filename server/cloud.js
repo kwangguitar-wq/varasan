@@ -3,7 +3,7 @@
 // Blob replaces data/uploads. The same shapes are used by api/index.mjs at
 // request time and by scripts/seed-cloud.mjs during the production build.
 import { createClient } from '@libsql/client';
-import { SCHEMA_STATEMENTS, runtime, setDatabaseDriver } from './db.js';
+import { SCHEMA_STATEMENTS, UPLOAD_SCHEMA_STATEMENTS, runtime, setDatabaseDriver } from './db.js';
 import { createBlobStorage } from './drivers/vercel-blob.js';
 import { createFsStorage } from './drivers/fs-storage.js';
 import { createLibsqlDriver } from './drivers/libsql.js';
@@ -38,9 +38,21 @@ export function configureCloud(config = cloudConfig()) {
       : createFsStorage(config.uploadDir),
   );
   runtime.platform = 'vercel';
-  // Vercel caps request and response bodies at 4.5 MB.
-  runtime.maxUploadBytes = 4 * 1024 * 1024;
+  // Vercel caps a Function request body at 4.5 MB, so books travel in chunks
+  // instead of one multipart request. Responses stay under the same cap because
+  // large files are redirected to the Blob CDN.
+  runtime.uploadMode = 'chunked';
+  runtime.chunkBytes = 3 * 1024 * 1024;
+  runtime.maxUploadBytes = 64 * 1024 * 1024;
   return client;
+}
+
+/** Upload tables postdate the first deploys, so add them to existing databases. */
+export async function ensureUploadSchema(client) {
+  await client.batch(
+    UPLOAD_SCHEMA_STATEMENTS.map((sql) => ({ sql, args: [] })),
+    'write',
+  );
 }
 
 async function tableExists(client, name) {

@@ -20,7 +20,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const contentType = response.headers.get('content-type') ?? '';
   const payload = contentType.includes('application/json') ? await response.json().catch(() => null) : null;
   if (!response.ok) {
-    throw new ApiError(payload?.error ?? `เกิดข้อผิดพลาด (${response.status})`, response.status);
+    const fallback =
+      response.status === 413
+        ? 'ไฟล์ใหญ่เกินขีดจำกัดของเซิร์ฟเวอร์ — ลองบีบอัดไฟล์หรืออัปโหลดใหม่'
+        : `เกิดข้อผิดพลาด (${response.status})`;
+    throw new ApiError(payload?.error ?? fallback, response.status);
   }
   return payload as T;
 }

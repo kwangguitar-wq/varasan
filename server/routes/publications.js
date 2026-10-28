@@ -135,14 +135,14 @@ async function reindex(publication, extractedText = '') {
 }
 
 /** Store the uploaded book (and everything derived from it) in object storage. */
-async function ingestFile(publication, file) {
+async function ingestFile(publication, file, { stored = false } = {}) {
   const ext = path.extname(file.originalname).toLowerCase();
   const base = `books/${publication.id}`;
   const publicBase = uploadUrl(base);
   const buffer = file.buffer ?? new Uint8Array();
 
   if (ext === '.pdf') {
-    await putObject(`${base}/book.pdf`, buffer, 'application/pdf');
+    if (!stored) await putObject(`${base}/book.pdf`, buffer, 'application/pdf');
     const pdf = await readPdf(buffer);
     return {
       fileType: 'pdf',
@@ -154,7 +154,7 @@ async function ingestFile(publication, file) {
     };
   }
   if (ext === '.epub') {
-    await putObject(`${base}/book.epub`, buffer, 'application/epub+zip');
+    if (!stored) await putObject(`${base}/book.epub`, buffer, 'application/epub+zip');
     const epub = readEpub(buffer, { publicBase: `${publicBase}/epub` });
     for (const [name, bytes] of epub.assets) {
       await putObject(`${base}/epub/${name}`, bytes, contentTypeFor(name));
@@ -170,7 +170,7 @@ async function ingestFile(publication, file) {
     };
   }
   if (ext === '.zip') {
-    await putObject(`${base}/book.zip`, buffer, 'application/zip');
+    if (!stored) await putObject(`${base}/book.zip`, buffer, 'application/zip');
     const flip = readFlipbookZip(buffer, { publicBase: `${publicBase}/pages` });
     for (const asset of flip.assets) {
       await putObject(`${base}/pages/${asset.name}`, asset.bytes, contentTypeFor(asset.name));
@@ -562,5 +562,34 @@ router.delete('/:id', canManageContent, async (req, res, next) => {
     next(error);
   }
 });
+
+/** Serialized publication for API responses. */
+export async function serializeForClient(publicationId) {
+  const row = await db.prepare(`${basePublicationQuery()} WHERE p.id = ?`).get(publicationId);
+  return row ? serializePublication(row) : null;
+}
+
+/**
+ * Ingest a book the browser uploaded in chunks: the bytes are already in object
+ * storage, so only the text index, page count and column values are written.
+ */
+export async function attachStoredFile(publicationId, { filename, buffer }) {
+  const publication = await db.prepare('SELECT * FROM publications WHERE id = ?').get(publicationId);
+  if (!publication) {
+    const error = new Error('ไม่พบเอกสารนี้');
+    error.status = 404;
+    throw error;
+  }
+  const ext = path.extname(filename).toLowerCase();
+  const key = `books/${publication.id}/book${ext}`;
+  await putObject(key, buffer, contentTypeFor(key));
+  const ingested = await ingestFile(publication, { originalname: filename, buffer }, { stored: true });
+  await db
+    .prepare('UPDATE publications SET file_url = ?, file_type = ?, file_size = ?, pages = ? WHERE id = ?')
+    .run(ingested.fileUrl, ingested.fileType, ingested.fileSize, ingested.pages, publication.id);
+  const updated = await db.prepare('SELECT * FROM publications WHERE id = ?').get(publication.id);
+  await reindex(updated, ingested.text);
+  return serializeForClient(publication.id);
+}
 
 export default router;

@@ -6,6 +6,7 @@ import { AdminLayout } from '../../components/AdminLayout';
 import { Icon } from '../../components/Icons';
 import { useToast } from '../../lib/toast';
 import { formatFileSize, typeLabels } from '../../lib/format';
+import { uploadInChunks, type UploadConfig } from '../../lib/upload';
 
 const EMPTY_FORM = {
   title: '',
@@ -41,6 +42,8 @@ export function AdminEditor() {
   const [existing, setExisting] = useState<Publication | null>(null);
   const [saving, setSaving] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [uploadConfig, setUploadConfig] = useState<UploadConfig | null>(null);
+  const [progress, setProgress] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,6 +53,7 @@ export function AdminEditor() {
       .then((data) => setCategories(data.categories))
       .catch(() => null);
     api.get<{ tags: Tag[] }>('/api/tags').then((data) => setTagLibrary(data.tags)).catch(() => null);
+    api.get<UploadConfig>('/api/uploads/config').then(setUploadConfig).catch(() => null);
   }, []);
 
   useEffect(() => {
@@ -107,7 +111,26 @@ export function AdminEditor() {
       toast.show('การเผยแพร่ต้องมีไฟล์ PDF, ePub หรือ Flipbook', 'error');
       return;
     }
+    if (file && uploadConfig && file.size > uploadConfig.maxFileBytes) {
+      toast.show(`ไฟล์ใหญ่เกินกำหนด (สูงสุด ${formatFileSize(uploadConfig.maxFileBytes)})`, 'error');
+      return;
+    }
     setSaving(true);
+    setProgress(null);
+    try {
+      if (uploadConfig?.mode === 'chunked') await saveChunked();
+      else await saveMultipart();
+      toast.show(editing ? 'บันทึกการแก้ไขและจัดทำดัชนีใหม่แล้ว' : 'เพิ่มรายการและจัดทำดัชนีคำสำคัญแล้ว', 'success');
+      navigate('/admin/content');
+    } catch (error) {
+      toast.show((error as Error).message, 'error');
+    } finally {
+      setSaving(false);
+      setProgress(null);
+    }
+  };
+
+  const saveMultipart = async () => {
     const payload = new FormData();
     for (const [key, value] of Object.entries(form)) {
       payload.append(key, String(value));
@@ -115,21 +138,43 @@ export function AdminEditor() {
     payload.append('tags', JSON.stringify(tags));
     if (file) payload.append('file', file);
     if (cover) payload.append('cover', cover);
+    if (editing) await api.patch(`/api/publications/${id}`, payload);
+    else await api.post('/api/publications', payload);
+  };
 
-    try {
-      if (editing) {
-        await api.patch(`/api/publications/${id}`, payload);
-        toast.show('บันทึกการแก้ไขและจัดทำดัชนีใหม่แล้ว', 'success');
-      } else {
-        await api.post('/api/publications', payload);
-        toast.show('เพิ่มรายการและจัดทำดัชนีคำสำคัญแล้ว', 'success');
-      }
-      navigate('/admin/content');
-    } catch (error) {
-      toast.show((error as Error).message, 'error');
-    } finally {
-      setSaving(false);
+  // Hosts that cap a request body (Vercel: 4.5 MB) save the record first, send
+  // the book in chunks, then publish — so nothing is lost when the file is big.
+  const saveChunked = async () => {
+    const metadata = {
+      title: form.title,
+      subtitle: form.subtitle,
+      author: form.author,
+      publisher: form.publisher,
+      year: form.year,
+      type: form.type,
+      categoryId: form.categoryId,
+      language: form.language,
+      issn: form.issn,
+      isbn: form.isbn,
+      pages: form.pages,
+      description: form.description,
+      abstract: form.abstract,
+      featured: form.featured,
+      tags: JSON.stringify(tags),
+    };
+    let targetId = Number(id);
+    if (editing) {
+      await api.patch(`/api/publications/${targetId}`, metadata);
+    } else {
+      const created = await api.post<{ publication: Publication }>('/api/publications', {
+        ...metadata,
+        status: 'draft',
+      });
+      targetId = created.publication.id;
     }
+    if (file) await uploadInChunks(targetId, 'file', file, setProgress);
+    if (cover) await uploadInChunks(targetId, 'cover', cover);
+    await api.patch(`/api/publications/${targetId}`, { status: form.status });
   };
 
   const suggestions = tagLibrary.filter(
@@ -147,7 +192,11 @@ export function AdminEditor() {
           </Link>
           <button type="submit" form="publication-form" className="btn btn-primary" disabled={saving}>
             {saving ? <span className="spinner spinner-sm" /> : <Icon name="check" size={17} />}
-            {saving ? 'กำลังบันทึกและจัดทำดัชนี…' : 'บันทึกรายการ'}
+            {saving
+              ? progress !== null
+                ? `กำลังอัปโหลด ${progress}%`
+                : 'กำลังบันทึกและจัดทำดัชนี…'
+              : 'บันทึกรายการ'}
           </button>
         </div>
       }
@@ -339,7 +388,10 @@ export function AdminEditor() {
             <div className="panel-head">
               <div>
                 <h2>ไฟล์เอกสาร</h2>
-                <p>รองรับ PDF, ePub และ ZIP ของรูปภาพสำหรับ Flipbook (สูงสุด 300 MB)</p>
+                <p>
+                  รองรับ PDF, ePub และ ZIP ของรูปภาพสำหรับ Flipbook (สูงสุด{' '}
+                  {formatFileSize(uploadConfig?.maxFileBytes ?? 300 * 1024 * 1024)})
+                </p>
               </div>
             </div>
             <div

@@ -7,7 +7,7 @@
 // to cost the full ~3k rows again on each retry, which is what exhausted the
 // daily write allowance and paused the site.
 import { gunzipSync } from 'fflate';
-import { SCHEMA_STATEMENTS } from './db.js';
+import { SCHEMA_STATEMENTS, UPLOAD_SCHEMA_STATEMENTS } from './db.js';
 import { getStorageDriver } from './storage.js';
 
 const MAX_STATEMENT_BYTES = 95 * 1024;
@@ -32,6 +32,8 @@ async function bootstrap(env) {
   // Recreating tables on every cold start is wasted work: only a database that
   // has never been bootstrapped needs the DDL.
   if (!(await schemaReady(env))) await ensureSchema(env);
+  // Tables added after the first deploy still need creating on existing sites.
+  else await env.DB.batch(UPLOAD_SCHEMA_STATEMENTS.map((sql) => env.DB.prepare(sql)));
   const snapshot = await loadManifest(env);
   await ensureSeedData(env, snapshot);
   await ensureSeedUploads(env, snapshot);
