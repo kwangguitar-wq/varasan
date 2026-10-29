@@ -11,6 +11,9 @@ import { getObject, getStorageDriver } from '../server/storage.js';
 export const config = { maxDuration: 60 };
 
 const SMALL_FILE_BYTES = 4 * 1024 * 1024;
+// Vercel rejects a Function response body above 4.5 MB, so ranged reads are cut
+// to this window; readers such as PDF.js keep asking for the next window.
+const MAX_SLICE_BYTES = 3 * 1024 * 1024;
 
 let booted = null;
 
@@ -39,6 +42,44 @@ function bootstrap() {
   return booted;
 }
 
+function notFound(res) {
+  res.statusCode = 404;
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.end(JSON.stringify({ error: 'ไม่พบไฟล์ที่ร้องขอ' }));
+}
+
+function sendWhole(req, res, object) {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', object.contentType);
+  res.setHeader('Content-Length', String(object.size));
+  res.setHeader('Cache-Control', 'private, max-age=604800');
+  res.setHeader('Accept-Ranges', 'bytes');
+  if (req.method === 'HEAD') {
+    res.end();
+    return;
+  }
+  res.end(Buffer.from(object.bytes));
+}
+
+/** "bytes=0-1023" → {start, end}; {invalid} when unsatisfiable. */
+function parseRange(header, size) {
+  const match = /^bytes=(\d*)-(\d*)$/.exec(String(header ?? '').trim());
+  if (!match) return null;
+  const [, rawStart, rawEnd] = match;
+  let start;
+  let end;
+  if (rawStart === '') {
+    if (rawEnd === '') return null;
+    end = size - 1;
+    start = Math.max(0, size - Number(rawEnd));
+  } else {
+    start = Number(rawStart);
+    end = rawEnd === '' ? size - 1 : Math.min(Number(rawEnd), size - 1);
+  }
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start > end || start >= size) return { invalid: true };
+  return { start, end };
+}
+
 async function serveUpload(req, res, pathname) {
   // Plain Node response: Express helpers such as res.status()/res.json() are
   // only attached once the request goes through app().
@@ -54,36 +95,72 @@ async function serveUpload(req, res, pathname) {
     return;
   }
 
-  const object = await getObject(key);
-  if (!object) {
-    res.statusCode = 404;
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.end(JSON.stringify({ error: 'ไม่พบไฟล์ที่ร้องขอ' }));
-    return;
+  const driver = getStorageDriver();
+  const stat = typeof driver.stat === 'function' ? await driver.stat(key) : null;
+
+  // No metadata support (older driver): one full read, size is then implicit.
+  if (!stat) {
+    const object = await getObject(key);
+    if (!object) return notFound(res);
+    return sendWhole(req, res, object);
   }
 
-  const driver = getStorageDriver();
-  // Vercel caps a Function response at 4.5 MB: hand larger files to the CDN.
-  if (object.size > SMALL_FILE_BYTES && typeof driver.url === 'function') {
-    const target = await driver.url(key);
-    if (target) {
+  // Public bucket: hand large files to the CDN instead of the 4.5 MB window.
+  if (stat.size > SMALL_FILE_BYTES && typeof driver.link === 'function') {
+    const link = await driver.link(key).catch(() => null);
+    if (link) {
       res.statusCode = 302;
-      res.setHeader('Location', target);
+      res.setHeader('Location', link.url);
       res.end();
       return;
     }
   }
 
-  res.statusCode = 200;
-  res.setHeader('Content-Type', object.contentType);
-  res.setHeader('Content-Length', String(object.size));
-  res.setHeader('Cache-Control', 'public, max-age=604800');
-  res.setHeader('Accept-Ranges', 'none');
-  if (req.method === 'HEAD') {
+  const range = parseRange(req.headers.range, stat.size);
+  if (range?.invalid) {
+    res.statusCode = 416;
+    res.setHeader('Content-Range', `bytes */${stat.size}`);
     res.end();
     return;
   }
-  res.end(Buffer.from(object.bytes));
+
+  if (req.method === 'HEAD') {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', stat.contentType);
+    res.setHeader('Content-Length', String(stat.size));
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'private, max-age=604800');
+    res.end();
+    return;
+  }
+
+  if (range) {
+    const end = Math.min(range.end, range.start + MAX_SLICE_BYTES - 1, stat.size - 1);
+    const chunk =
+      typeof driver.readRange === 'function' ? await driver.readRange(key, range.start, end) : null;
+    let bytes;
+    let total = stat.size;
+    if (chunk) {
+      bytes = chunk.bytes;
+      total = chunk.total ?? stat.size;
+    } else {
+      const object = await getObject(key);
+      if (!object) return notFound(res);
+      bytes = object.bytes.subarray(range.start, end + 1);
+    }
+    res.statusCode = 206;
+    res.setHeader('Content-Type', stat.contentType);
+    res.setHeader('Content-Length', String(bytes.length));
+    res.setHeader('Content-Range', `bytes ${range.start}-${range.start + bytes.length - 1}/${total}`);
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'private, max-age=604800');
+    res.end(Buffer.from(bytes));
+    return;
+  }
+
+  const object = await getObject(key);
+  if (!object) return notFound(res);
+  sendWhole(req, res, object);
 }
 
 export default async function handler(req, res) {

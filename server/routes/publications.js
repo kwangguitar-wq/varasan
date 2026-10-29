@@ -15,7 +15,7 @@ import {
 import { generateCoverSvg } from '../covers.js';
 import { basePublicationQuery, listPublications, serializePublication } from '../serialize.js';
 import { runPublicationQuery } from '../search.js';
-import { contentTypeFor, deleteObjects, getObject, getText, putObject, uploadUrl } from '../storage.js';
+import { contentTypeFor, deleteObjects, getObject, getText, objectLink, putObject, uploadUrl } from '../storage.js';
 
 const router = express.Router();
 
@@ -350,6 +350,16 @@ router.get('/:id/download', async (req, res, next) => {
     await db
       .prepare('INSERT INTO analytics_events (publication_id, user_id, type, day, created_at) VALUES (?, ?, ?, ?, ?)')
       .run(row.id, req.user?.id ?? null, 'download', todayKey(), nowIso());
+
+    // Hosts cap a Function response at 4.5 MB (Vercel), so hand larger books to
+    // the CDN when the bucket exposes public links.
+    if (object.size > 4 * 1024 * 1024) {
+      const link = await objectLink(key).catch(() => null);
+      if (link) {
+        res.redirect(302, link.downloadUrl ?? link.url);
+        return;
+      }
+    }
 
     res.setHeader('Content-Type', object.contentType || 'application/octet-stream');
     res.setHeader('Content-Length', String(object.size));

@@ -45,10 +45,18 @@ const walk = (dir, base = dir) => {
 
 const keys = walk(UPLOAD_DIR).sort();
 let copied = 0;
-for (const key of keys) {
-  if (await objectExists(key)) continue;
-  const bytes = new Uint8Array(fs.readFileSync(path.join(UPLOAD_DIR, key)));
-  await putObject(key, bytes);
-  copied += 1;
+try {
+  for (const key of keys) {
+    if (await objectExists(key)) continue;
+    const bytes = new Uint8Array(fs.readFileSync(path.join(UPLOAD_DIR, key)));
+    await putObject(key, bytes);
+    copied += 1;
+  }
+  console.log(`[nakhonmaesot:seed] คัดลอกไฟล์ขึ้น Blob ${copied}/${keys.length} ไฟล์`);
+} catch (error) {
+  // A storage hiccup must not fail the whole deployment: the site still serves
+  // the database, and the missing files can be re-seeded by the next build.
+  console.warn(
+    `[nakhonmaesot:seed] คัดลอกไฟล์ขึ้น Blob ได้ ${copied}/${keys.length} ไฟล์ แล้วหยุดเพราะ: ${error?.message ?? error}`,
+  );
 }
-console.log(`[nakhonmaesot:seed] คัดลอกไฟล์ขึ้น Blob ${copied}/${keys.length} ไฟล์`);

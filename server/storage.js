@@ -91,3 +91,17 @@ export async function deleteObject(key) {
 export async function deleteObjects(prefix) {
   await getStorageDriver().deletePrefix(prefix);
 }
+
+/** Metadata only (no body read) when the driver can provide it. */
+export async function statObject(key) {
+  const current = getStorageDriver();
+  if (typeof current.stat === 'function') return current.stat(key);
+  const object = await current.get(key);
+  return object ? { size: object.size, contentType: object.contentType } : null;
+}
+
+/** Browser-usable CDN links, or null when files must be proxied (private store). */
+export async function objectLink(key) {
+  const current = getStorageDriver();
+  return typeof current.link === 'function' ? current.link(key) : null;
+}
