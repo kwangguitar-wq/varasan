@@ -1,4 +1,5 @@
 import express from 'express';
+import { runtime } from './db.js';
 import { attachUser } from './auth.js';
 import authRoutes from './routes/auth.js';
 import publicationRoutes from './routes/publications.js';
@@ -24,6 +25,10 @@ export function createApp() {
       ok: true,
       service: 'nakhonmaesot-library',
       commit: (process.env.VERCEL_GIT_COMMIT_SHA ?? '').slice(0, 7) || null,
+      // Answers "where is the data?" for this deployment without exposing
+      // credentials: 'blob' | 'db' | 'fs' for uploads, plus the database host.
+      storage: runtime.storageBackend,
+      database: runtime.databaseHost,
       time: new Date().toISOString(),
     });
   });

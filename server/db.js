@@ -15,6 +15,11 @@ export const runtime = {
   // without BLOB_READ_WRITE_TOKEN): requests then fail with this explanation
   // instead of an opaque 500 from a read-only disk.
   storageIssue: null,
+  // Reported by /api/health so a deployment can be checked from the outside:
+  // which object storage holds uploads and which database host holds the rows.
+  // The host only — never the URL with its credentials or token.
+  storageBackend: 'fs',
+  databaseHost: null,
 };
 
 export function setDatabaseDriver(next) {

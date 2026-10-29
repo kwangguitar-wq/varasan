@@ -17,6 +17,8 @@ globalThis.pdfjsWorker = pdfjsWorker;
 
 runtime.platform = 'worker';
 runtime.maxUploadBytes = 64 * 1024 * 1024;
+runtime.storageBackend = 'r2';
+runtime.databaseHost = 'd1';
 
 setDatabaseDriver(createD1Driver(env.DB));
 setStorageDriver(createR2Storage(env.FILES));

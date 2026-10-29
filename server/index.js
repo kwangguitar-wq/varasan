@@ -11,6 +11,7 @@ import { createApp } from './app.js';
 const PORT = Number(process.env.PORT) || 4000;
 
 runtime.platform = 'node';
+runtime.databaseHost = DB_PATH;
 setDatabaseDriver(createSqliteDriver(DB_PATH));
 setStorageDriver(createFsStorage(UPLOAD_DIR));
 

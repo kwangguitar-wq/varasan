@@ -43,6 +43,7 @@ function selectStorage(config, client) {
 
 function mountStorage(backend, config, client) {
   storageBackend = backend;
+  runtime.storageBackend = backend;
   if (backend === 'blob') return createBlobStorage({ token: config.blobToken });
   if (backend === 'db') return createLibsqlStorage(client);
   return createFsStorage(config.uploadDir);
@@ -60,6 +61,14 @@ export function configureCloud(config = cloudConfig()) {
     ...(config.authToken ? { authToken: config.authToken } : {}),
   });
   setDatabaseDriver(createLibsqlDriver(client));
+  // Host only (no credentials) so /api/health can say which database this
+  // deployment writes to, e.g. "xxx.turso.io".
+  try {
+    const parsed = new URL(config.url);
+    runtime.databaseHost = parsed.host || parsed.pathname.slice(0, 60);
+  } catch {
+    runtime.databaseHost = null;
+  }
   // Without Blob (local runs) uploads fall back to the data directory; on Vercel
   // they fall back to the database, because the bundle is read-only.
   setStorageDriver(mountStorage(selectStorage(config, client), config, client));
