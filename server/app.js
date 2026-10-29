@@ -18,7 +18,14 @@ export function createApp() {
   app.use(attachUser);
 
   app.get('/api/health', (_req, res) => {
-    res.json({ ok: true, service: 'nakhonmaesot-library', time: new Date().toISOString() });
+    // `commit` lets a deployment be identified from the outside (Vercel sets the
+    // variable at build time), which makes "is the fix live yet?" answerable.
+    res.json({
+      ok: true,
+      service: 'nakhonmaesot-library',
+      commit: (process.env.VERCEL_GIT_COMMIT_SHA ?? '').slice(0, 7) || null,
+      time: new Date().toISOString(),
+    });
   });
 
   app.use('/api/uploads', uploadRoutes);
