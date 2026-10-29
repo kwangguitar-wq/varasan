@@ -207,25 +207,34 @@ Function ตัวเดียวที่ `api/index.mjs` (Express ตัวเ
 | ส่วน | บน Vercel | ตัวแปรสภาพแวดล้อม |
 | --- | --- | --- |
 | ฐานข้อมูล | Turso (libSQL — ภาษา SQL เดียวกับ SQLite) | `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` |
-| ไฟล์อัปโหลด/ปก/PDF | Vercel Blob | `BLOB_READ_WRITE_TOKEN` |
+| ไฟล์อัปโหลด/ปก/PDF | Vercel Blob (แนะนำ) หรือตาราง `upload_objects` ใน Turso | `BLOB_READ_WRITE_TOKEN` (ไม่บังคับ) |
+
+การเลือกที่เก็บไฟล์ทำอัตโนมัติ: ถ้ามี `BLOB_READ_WRITE_TOKEN` จะใช้ Blob,
+ถ้าไม่มีจะเก็บไฟล์ในฐานข้อมูล Turso แทน (ดิสก์ของ Function เขียนไม่ได้)
+กำหนดเองได้ด้วย `FILE_STORAGE=auto|blob|db|fs`
+
+Blob store ต้องสร้างเป็นแบบ **Public** ถ้าต้องการให้ไฟล์ใหญ่ถูกส่งต่อผ่าน CDN
+(โหมด Public/Private เปลี่ยนภายหลังไม่ได้) — โค้ดรองรับทั้งสองแบบ: store แบบ private
+จะถูกอ่านผ่าน proxy `/uploads/*` แบบ Range request แทน
 
 ### ขั้นตอน
 
 1. สร้างฐานข้อมูล Turso ผ่าน Vercel → Storage (Marketplace) แล้วเชื่อมกับโปรเจกต์
    — Vercel จะใส่ `TURSO_DATABASE_URL` และ `TURSO_AUTH_TOKEN` ให้เอง
-2. สร้าง Blob store (Vercel → Storage → Blob) แล้วเชื่อมกับโปรเจกต์
-   — จะได้ `BLOB_READ_WRITE_TOKEN`
+2. (ไม่บังคับ) สร้าง Blob store (Vercel → Storage → Blob) แล้วเชื่อมกับโปรเจกต์
+   — จะได้ `BLOB_READ_WRITE_TOKEN`; ถ้าไม่มี ระบบจะเก็บไฟล์ในฐานข้อมูลให้เลย
 3. Import repository นี้ใน Vercel แล้วกด Deploy
 
 `vercel.json` ตั้งค่า build ไว้เป็น `npm run build && node scripts/seed-cloud.mjs`
 ตัว seed จะสร้าง schema และข้อมูลตัวอย่าง (ผู้ใช้ 6 คน, หมวดหมู่, หนังสือ 25 เล่ม
-พร้อมไฟล์ PDF/ePub) ลง Turso และคัดลอกไฟล์ขึ้น Blob **ครั้งเดียว** — ถ้าฐานข้อมูลมี
+พร้อมไฟล์ PDF/ePub) ลง Turso และคัดลอกไฟล์เข้า backend ที่เลือกไว้ **ครั้งเดียว** — ถ้าฐานข้อมูลมี
 ผู้ใช้อยู่แล้วจะข้ามทันที จึงไม่เปลืองการเขียนซ้ำทุกครั้งที่ build
 
 ### ข้อจำกัดที่ต่างจากเวอร์ชัน Cloudflare/เครื่อง Local
 
-- Request/response ของ Vercel Function จำกัด **4.5 MB** — การอัปโหลดหนังสือขนาดใหญ่
-  จากหน้าแอดมินจึงยังทำบน Vercel ไม่ได้ (อ่าน/ดาวน์โหลดไฟล์ตัวอย่างทำได้ปกติ)
-- ไฟล์ที่ใหญ่กว่า 4 MB จะถูกส่งต่อ (302) ไปยัง URL ของ Blob โดยตรง
+- Request/response ของ Vercel Function จำกัด **4.5 MB**: การอัปโหลดจึงแบ่งเป็นชิ้น
+  (chunked) และการอ่าน/ดาวน์โหลดใช้ Range request ทำให้หนังสือไฟล์ใหญ่ใช้งานได้
+- ไฟล์ที่ใหญ่กว่า 4 MB จะถูกส่งต่อ (302) ไปยัง CDN เมื่อใช้ Blob store แบบ public;
+  ถ้าใช้ store แบบ private หรือเก็บในฐานข้อมูล ไฟล์จะถูกอ่านผ่าน proxy แบบช่วง
 - ฐานข้อมูลต้องมีผู้ใช้อย่างน้อย 1 คนจากขั้นตอน seed; ถ้าไม่ได้ตั้งค่า
   `TURSO_DATABASE_URL` ฝั่ง API จะตอบ 503 พร้อมข้อความบอกการตั้งค่า

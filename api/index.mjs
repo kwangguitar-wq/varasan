@@ -3,7 +3,6 @@
 // bundle is read-only and instances do not share a disk.
 import { app } from '../server/app.js';
 import { cloudConfig, configureCloud, ensureCloudSchema, ensureUploadSchema, isCloudConfigured } from '../server/cloud.js';
-import { runtime } from '../server/db.js';
 import { getObject, getStorageDriver } from '../server/storage.js';
 
 // Hobby plans allow up to 60s; seeding happens at build time, so requests are
@@ -23,12 +22,9 @@ async function boot() {
   const client = configureCloud(settings);
   await ensureCloudSchema(client);
   await ensureUploadSchema(client);
-  // A Function's filesystem is read-only: without Blob every upload would die
-  // on the first write with a bare 500, so explain the missing variable instead.
-  runtime.storageIssue =
-    !settings.blobToken && process.env.VERCEL
-      ? 'ยังไม่ได้ตั้งค่า BLOB_READ_WRITE_TOKEN บน Vercel ระบบจึงบันทึกไฟล์ไม่ได้ — ไปที่ Vercel → Settings → Environment Variables แล้วเพิ่ม BLOB_READ_WRITE_TOKEN (สร้างจาก Vercel → Storage → Blob) จากนั้น Redeploy'
-      : null;
+  // configureCloud() has picked the storage backend for this deployment: Vercel
+  // Blob when a token is configured, otherwise the database itself, so a
+  // read-only Function bundle never needs a writable disk.
   return { ready: true };
 }
 
