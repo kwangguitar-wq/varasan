@@ -216,6 +216,20 @@ async function ensureGeneratedCover(publication) {
   return url;
 }
 
+/**
+ * The auto-generated cover is decoration: when object storage is unavailable
+ * (read-only bundle, misconfigured bucket) the record must still be saved and
+ * the client falls back to the gradient placeholder.
+ */
+async function tryEnsureGeneratedCover(publication) {
+  try {
+    return await ensureGeneratedCover(publication);
+  } catch (error) {
+    console.warn('[nakhonmaesot] สร้างปกอัตโนมัติไม่สำเร็จ — บันทึกรายการต่อได้', error?.message ?? error);
+    return null;
+  }
+}
+
 function normalizeBody(body) {
   const data = {};
   const text = (key) => (typeof body[key] === 'string' ? body[key].trim() : undefined);
@@ -487,7 +501,7 @@ router.post('/', canManageContent, uploader, async (req, res, next) => {
 
     publication = await db.prepare(`${basePublicationQuery()} WHERE p.id = ?`).get(id);
     if (!publication.cover_url) {
-      await ensureGeneratedCover(publication);
+      await tryEnsureGeneratedCover(publication);
       publication = await db.prepare(`${basePublicationQuery()} WHERE p.id = ?`).get(id);
     }
 
@@ -547,7 +561,7 @@ router.patch('/:id', canManageContent, uploader, async (req, res, next) => {
     if (!publication.cover_url || /^\/uploads\/covers\/auto-/.test(publication.cover_url)) {
       await db.prepare('UPDATE publications SET cover_url = NULL WHERE id = ?').run(existing.id);
       const refreshed = await db.prepare('SELECT * FROM publications WHERE id = ?').get(existing.id);
-      await ensureGeneratedCover({ ...refreshed, category_name: existing.category_name });
+      await tryEnsureGeneratedCover({ ...refreshed, category_name: existing.category_name });
     }
 
     const finalRow = await db.prepare(`${basePublicationQuery()} WHERE p.id = ?`).get(existing.id);
