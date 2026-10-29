@@ -143,7 +143,14 @@ async function ingestFile(publication, file, { stored = false } = {}) {
 
   if (ext === '.pdf') {
     if (!stored) await putObject(`${base}/book.pdf`, buffer, 'application/pdf');
-    const pdf = await readPdf(buffer);
+    // The file is already stored, so a parser that cannot read it (odd font,
+    // huge page, missing dependency on the host) must not lose the upload.
+    let pdf = { pageCount: 1, text: '' };
+    try {
+      pdf = await readPdf(buffer);
+    } catch (error) {
+      console.warn('[nakhonmaesot] อ่านข้อความจาก PDF ไม่สำเร็จ — เก็บไฟล์ไว้และบันทึกรายการต่อ', error?.message ?? error);
+    }
     return {
       fileType: 'pdf',
       fileUrl: `${publicBase}/book.pdf`,

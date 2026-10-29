@@ -49,6 +49,9 @@ export function createApp() {
     console.error('[nakhonmaesot]', error);
     if (res.headersSent) return;
     const status = error.status || (error.code === 'LIMIT_FILE_SIZE' ? 413 : 500);
+    // Admins also get the underlying reason: on a host without log access an
+    // opaque 500 is impossible to diagnose from the screen.
+    const canSeeDetail = _req.user?.role === 'admin' && !error.expose && status >= 500;
     res.status(status).json({
       error:
         status === 413
@@ -56,6 +59,7 @@ export function createApp() {
           : error.expose || error.status
             ? error.message
             : 'เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์',
+      ...(canSeeDetail ? { detail: String(error.message ?? error).slice(0, 300) } : {}),
     });
   });
 
