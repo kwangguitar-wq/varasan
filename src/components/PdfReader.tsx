@@ -135,8 +135,10 @@ export function PdfReader({ url, page, zoom, onPage, onTotal }: PdfReaderProps) 
     let loaded: PDFDocumentProxy | null = null;
     setDoc(null);
     setError(null);
+    // No credentials: the file is requested from our own origin, and sending
+    // cookies would break any redirected CDN response (CORS answers `*`).
     pdfjs
-      .getDocument({ url, withCredentials: true })
+      .getDocument({ url })
       .promise.then((document) => {
         if (cancelled) {
           void document.destroy();

@@ -15,7 +15,7 @@ import {
 import { generateCoverSvg } from '../covers.js';
 import { basePublicationQuery, listPublications, serializePublication } from '../serialize.js';
 import { runPublicationQuery } from '../search.js';
-import { contentTypeFor, deleteObjects, getObject, getText, objectLink, putObject, uploadUrl } from '../storage.js';
+import { contentTypeFor, deleteObjects, getObject, getText, keyFromUrl, objectLink, putObject, uploadUrl } from '../storage.js';
 
 const router = express.Router();
 
@@ -135,7 +135,7 @@ async function reindex(publication, extractedText = '') {
 }
 
 /** Store the uploaded book (and everything derived from it) in object storage. */
-async function ingestFile(publication, file, { stored = false } = {}) {
+async function ingestFile(publication, file, { stored = false, pages: reportedPages } = {}) {
   const ext = path.extname(file.originalname).toLowerCase();
   const base = `books/${publication.id}`;
   const publicBase = uploadUrl(base);
@@ -151,11 +151,13 @@ async function ingestFile(publication, file, { stored = false } = {}) {
     } catch (error) {
       console.warn('[nakhonmaesot] อ่านข้อความจาก PDF ไม่สำเร็จ — เก็บไฟล์ไว้และบันทึกรายการต่อ', error?.message ?? error);
     }
+    // The uploader counts pages in the browser, so its number wins when present.
+    const pageCount = Number(reportedPages) > 0 ? Number(reportedPages) : pdf.pageCount;
     return {
       fileType: 'pdf',
       fileUrl: `${publicBase}/book.pdf`,
       fileSize: buffer.length,
-      pages: Math.max(pdf.pageCount, 1),
+      pages: Math.max(pageCount, 1),
       text: pdf.text,
       defaults: { type: 'ebook' },
     };
@@ -334,6 +336,23 @@ router.get('/:id/content', async (req, res, next) => {
       const payload = JSON.parse(raw);
       return res.json({ kind: 'flipbook', title: row.title, pages: payload.pages });
     }
+    // Uploads indexed before the PDF parser worked on the server recorded a
+    // single page. Repair the count from the stored file the first time the
+    // book is opened, so the item page shows the real number of pages.
+    if (Number(row.pages ?? 0) <= 1 && row.file_url) {
+      const object = await getObject(keyFromUrl(row.file_url)).catch(() => null);
+      if (object && object.size <= 30 * 1024 * 1024) {
+        try {
+          const pdf = await readPdf(object.bytes);
+          const pages = Math.max(pdf.pageCount, 1);
+          await db.prepare('UPDATE publications SET pages = ? WHERE id = ?').run(pages, row.id);
+          row.pages = pages;
+        } catch (error) {
+          console.warn('[nakhonmaesot] นับจำนวนหน้า PDF ไม่สำเร็จ', error?.message ?? error);
+        }
+      }
+    }
+
     res.json({ kind: 'pdf', title: row.title, fileUrl: row.file_url, pages: row.pages });
   } catch (error) {
     next(error);
@@ -604,7 +623,7 @@ export async function serializeForClient(publicationId) {
  * Ingest a book the browser uploaded in chunks: the bytes are already in object
  * storage, so only the text index, page count and column values are written.
  */
-export async function attachStoredFile(publicationId, { filename, buffer }) {
+export async function attachStoredFile(publicationId, { filename, buffer }, { pages } = {}) {
   const publication = await db.prepare('SELECT * FROM publications WHERE id = ?').get(publicationId);
   if (!publication) {
     const error = new Error('ไม่พบเอกสารนี้');
@@ -614,7 +633,7 @@ export async function attachStoredFile(publicationId, { filename, buffer }) {
   const ext = path.extname(filename).toLowerCase();
   const key = `books/${publication.id}/book${ext}`;
   await putObject(key, buffer, contentTypeFor(key));
-  const ingested = await ingestFile(publication, { originalname: filename, buffer }, { stored: true });
+  const ingested = await ingestFile(publication, { originalname: filename, buffer }, { stored: true, pages });
   await db
     .prepare('UPDATE publications SET file_url = ?, file_type = ?, file_size = ?, pages = ? WHERE id = ?')
     .run(ingested.fileUrl, ingested.fileType, ingested.fileSize, ingested.pages, publication.id);

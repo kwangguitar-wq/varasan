@@ -139,7 +139,14 @@ router.post('/:id/finish', canManageContent, async (req, res, next) => {
         .prepare('UPDATE publications SET cover_url = ?, updated_at = ? WHERE id = ?')
         .run(uploadUrl(`covers/${filename}`), nowIso(), session.publication_id);
     } else {
-      publication = await attachStoredFile(session.publication_id, { filename: session.filename, buffer });
+      // The browser measures the page count while uploading; prefer it over the
+      // server-side PDF parser, which may be missing assets on the host.
+      const reportedPages = Number(req.body?.pages);
+      publication = await attachStoredFile(
+        session.publication_id,
+        { filename: session.filename, buffer },
+        Number.isFinite(reportedPages) && reportedPages > 0 ? { pages: Math.round(reportedPages) } : {},
+      );
     }
 
     await db.prepare('DELETE FROM upload_parts WHERE session_id = ?').run(session.id);

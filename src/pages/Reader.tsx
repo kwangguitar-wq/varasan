@@ -133,8 +133,10 @@ export function Reader() {
     if (content?.kind !== 'pdf' || !content.fileUrl) return;
     let cancelled = false;
     let loaded: PDFDocumentProxy | null = null;
+    // Same-origin request: cookies are unnecessary and would make a redirected
+    // CDN response fail CORS (the Blob CDN answers with `*`).
     pdfjs
-      .getDocument({ url: content.fileUrl, withCredentials: true })
+      .getDocument({ url: content.fileUrl })
       .promise.then(async (document) => {
         if (cancelled) {
           void document.destroy();

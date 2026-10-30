@@ -3,13 +3,18 @@
 // bundle is read-only and instances do not share a disk.
 import { app } from '../server/app.js';
 import { cloudConfig, configureCloud, ensureCloudSchema, ensureUploadSchema, isCloudConfigured } from '../server/cloud.js';
+import { installDomPolyfills } from '../server/dom-polyfills.js';
 import { getObject, getStorageDriver } from '../server/storage.js';
+
+// pdf.js needs DOMMatrix even for text extraction, and Node does not provide it,
+// so the PDF indexer (page count + keywords) failed on Vercel and every upload
+// was recorded as "1 หน้า".
+installDomPolyfills();
 
 // Hobby plans allow up to 60s; seeding happens at build time, so requests are
 // normally far below this.
 export const config = { maxDuration: 60 };
 
-const SMALL_FILE_BYTES = 4 * 1024 * 1024;
 // Vercel rejects a Function response body above 4.5 MB, so ranged reads are cut
 // to this window; readers such as PDF.js keep asking for the next window.
 const MAX_SLICE_BYTES = 3 * 1024 * 1024;
@@ -101,17 +106,10 @@ async function serveUpload(req, res, pathname) {
     return sendWhole(req, res, object);
   }
 
-  // Public bucket: hand large files to the CDN instead of the 4.5 MB window.
-  if (stat.size > SMALL_FILE_BYTES && typeof driver.link === 'function') {
-    const link = await driver.link(key).catch(() => null);
-    if (link) {
-      res.statusCode = 302;
-      res.setHeader('Location', link.url);
-      res.end();
-      return;
-    }
-  }
-
+  // Files are always streamed through this Function, never redirected to the
+  // Blob CDN: the reader fetches with credentials, and the CDN answers CORS with
+  // `Access-Control-Allow-Origin: *` (no credentials, no exposed Content-Range),
+  // which made every book over 4 MB fail with "Failed to fetch".
   const range = parseRange(req.headers.range, stat.size);
   if (range?.invalid) {
     res.statusCode = 416;
@@ -130,10 +128,16 @@ async function serveUpload(req, res, pathname) {
     return;
   }
 
-  if (range) {
-    const end = Math.min(range.end, range.start + MAX_SLICE_BYTES - 1, stat.size - 1);
+  // A whole-file request for a book larger than the window is answered with the
+  // first window as 206: the body stays under Vercel's limit and range readers
+  // continue from Content-Range instead of receiving a truncated file.
+  const window =
+    range ?? (stat.size > MAX_SLICE_BYTES ? { start: 0, end: MAX_SLICE_BYTES - 1 } : null);
+
+  if (window) {
+    const end = Math.min(window.end, window.start + MAX_SLICE_BYTES - 1, stat.size - 1);
     const chunk =
-      typeof driver.readRange === 'function' ? await driver.readRange(key, range.start, end) : null;
+      typeof driver.readRange === 'function' ? await driver.readRange(key, window.start, end) : null;
     let bytes;
     let total = stat.size;
     if (chunk) {
@@ -142,12 +146,12 @@ async function serveUpload(req, res, pathname) {
     } else {
       const object = await getObject(key);
       if (!object) return notFound(res);
-      bytes = object.bytes.subarray(range.start, end + 1);
+      bytes = object.bytes.subarray(window.start, end + 1);
     }
     res.statusCode = 206;
     res.setHeader('Content-Type', stat.contentType);
     res.setHeader('Content-Length', String(bytes.length));
-    res.setHeader('Content-Range', `bytes ${range.start}-${range.start + bytes.length - 1}/${total}`);
+    res.setHeader('Content-Range', `bytes ${window.start}-${window.start + bytes.length - 1}/${total}`);
     res.setHeader('Accept-Ranges', 'bytes');
     res.setHeader('Cache-Control', 'private, max-age=604800');
     res.end(Buffer.from(bytes));

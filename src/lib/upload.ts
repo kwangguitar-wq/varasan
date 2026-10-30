@@ -1,4 +1,8 @@
+import * as pdfjs from 'pdfjs-dist';
+import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { api } from './api';
+
+pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
 export type UploadConfig = {
   mode: 'multipart' | 'chunked';
@@ -11,6 +15,23 @@ let cached: UploadConfig | null = null;
 export async function getUploadConfig(): Promise<UploadConfig> {
   if (!cached) cached = await api.get<UploadConfig>('/api/uploads/config');
   return cached;
+}
+
+/**
+ * Page count measured in the browser, where pdf.js always has a worker. The
+ * server-side parser cannot be relied on (it needs extra PDF assets on some
+ * hosts) and used to record every upload as a single page.
+ */
+async function pdfPageCount(file: File): Promise<number | null> {
+  try {
+    const data = new Uint8Array(await file.arrayBuffer());
+    const doc = await pdfjs.getDocument({ data }).promise;
+    const pages = doc.numPages;
+    await doc.destroy();
+    return Number.isFinite(pages) && pages > 0 ? pages : null;
+  } catch {
+    return null;
+  }
 }
 
 async function sendChunk(uploadId: string, index: number, chunk: Blob) {
@@ -56,7 +77,8 @@ export async function uploadInChunks(
       await sendChunk(session.id, index + 1, file.slice(start, Math.min(file.size, start + session.chunkBytes)));
       onProgress?.(Math.round(((index + 1) / total) * 100));
     }
-    await api.post(`/api/uploads/${session.id}/finish`);
+    const pages = kind === 'file' && /\.pdf$/i.test(file.name) ? await pdfPageCount(file) : null;
+    await api.post(`/api/uploads/${session.id}/finish`, pages ? { pages } : {});
   } catch (error) {
     await api.delete(`/api/uploads/${session.id}`).catch(() => null);
     throw error;
