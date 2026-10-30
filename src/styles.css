@@ -3965,8 +3965,24 @@ a.keyword-pill:hover {
 }
 
 /* turn leaves are projected slices: flat, edge to edge, no perspective stair-steps */
+.book-turn-leaf {
+  pointer-events: none;
+}
+
 .book-turn-leaf .book-curl-strip {
   transform-style: flat;
+}
+
+/* Pages rendered ahead of time so a turn never starts with a blank sheet. */
+.book-preload {
+  position: absolute;
+  top: 0;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .book-curl-face {
@@ -4022,15 +4038,17 @@ a.keyword-pill:hover {
   top: 0;
   z-index: 3;
   pointer-events: none;
+  /* A blurred, multiplied band is re-rasterised on every animation frame and
+     stutters on phones; a plain gradient composites for free. */
   background: linear-gradient(
     90deg,
     rgba(16, 12, 6, 0),
-    rgba(16, 12, 6, 0.26) 38%,
-    rgba(16, 12, 6, 0.26) 62%,
+    rgba(16, 12, 6, 0.12) 20%,
+    rgba(16, 12, 6, 0.2) 45%,
+    rgba(16, 12, 6, 0.2) 55%,
+    rgba(16, 12, 6, 0.12) 80%,
     rgba(16, 12, 6, 0)
   );
-  mix-blend-mode: multiply;
-  filter: blur(8px);
 }
 
 /* front matter (inside cover) */

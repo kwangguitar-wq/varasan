@@ -53,7 +53,7 @@ function sendWhole(req, res, object) {
   res.statusCode = 200;
   res.setHeader('Content-Type', object.contentType);
   res.setHeader('Content-Length', String(object.size));
-  res.setHeader('Cache-Control', 'private, max-age=604800');
+  res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Accept-Ranges', 'bytes');
   if (req.method === 'HEAD') {
     res.end();
@@ -123,7 +123,7 @@ async function serveUpload(req, res, pathname) {
     res.setHeader('Content-Type', stat.contentType);
     res.setHeader('Content-Length', String(stat.size));
     res.setHeader('Accept-Ranges', 'bytes');
-    res.setHeader('Cache-Control', 'private, max-age=604800');
+    res.setHeader('Cache-Control', 'no-store');
     res.end();
     return;
   }
@@ -153,7 +153,7 @@ async function serveUpload(req, res, pathname) {
     res.setHeader('Content-Length', String(bytes.length));
     res.setHeader('Content-Range', `bytes ${window.start}-${window.start + bytes.length - 1}/${total}`);
     res.setHeader('Accept-Ranges', 'bytes');
-    res.setHeader('Cache-Control', 'private, max-age=604800');
+    res.setHeader('Cache-Control', 'no-store');
     res.end(Buffer.from(bytes));
     return;
   }

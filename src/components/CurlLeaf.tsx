@@ -32,7 +32,10 @@ function clamp(min: number, max: number, value: number) {
 }
 
 function stripCountFor(width: number) {
-  return clamp(10, 20, Math.round(width / 30));
+  // Each slice paints its own copy of the page, so a high count multiplies the
+  // raster work done every frame and stutters on phones. Twelve still reads as
+  // a smooth bow while costing roughly half of twenty.
+  return clamp(8, 12, Math.round(width / 60));
 }
 
 /** How much the sheet bows at this angle: none when flat, most mid-turn. */

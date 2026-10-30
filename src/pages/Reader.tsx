@@ -551,6 +551,7 @@ export function Reader() {
             <p>กำลังเปิดหนังสือ…</p>
           </div>
         ) : bookMode && pageSize ? (
+          <>
           <BookReader
             title={publication!.title}
             author={publication!.author}
@@ -566,6 +567,23 @@ export function Reader() {
             onOpenCover={() => setShowCover(false)}
             onPage={setPage}
           />
+          {/* Rasterising a page takes long enough to stall the first frames of a
+              turn, so the pages just ahead are drawn while the reader idles. */}
+          {kind === 'pdf' && pdfDoc ? (
+            <div className="book-preload" aria-hidden="true">
+              {[page + 1, page + 2, page + 3, page + 4].map((target) =>
+                target <= total ? (
+                  <PdfPageView
+                    key={target}
+                    doc={pdfDoc}
+                    page={target}
+                    width={pageSize.pageWidth * 1.6}
+                  />
+                ) : null,
+              )}
+            </div>
+          ) : null}
+          </>
         ) : kind === 'pdf' && content?.fileUrl ? (
           <PdfReader
             url={content.fileUrl}
