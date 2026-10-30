@@ -5,8 +5,8 @@ import { CurlLeaf, curlBend, curlMetrics } from './CurlLeaf';
 import { playPageTurn } from '../lib/paperSound';
 
 /** Slow enough to read as paper being lifted, not as a screen flip. */
-const TURN_MS = 1150;
-const COVER_MS = 900;
+const TURN_MS = 1800;
+const COVER_MS = 1400;
 const HINT_KEY = 'nakhonmaesot-book-hint';
 
 export interface BookMeta {
