@@ -3969,8 +3969,20 @@ a.keyword-pill:hover {
   pointer-events: none;
 }
 
-.book-turn-leaf .book-curl-strip {
-  transform-style: flat;
+/* paper loses the light as it swings edge-on; the browser fades one gradient */
+.book-leaf-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(12, 16, 22, 0.55),
+    rgba(12, 16, 22, 0.16) 46%,
+    rgba(12, 16, 22, 0.1) 62%,
+    rgba(12, 16, 22, 0.4)
+  );
+  will-change: opacity;
 }
 
 /* Pages rendered ahead of time so a turn never starts with a blank sheet. */

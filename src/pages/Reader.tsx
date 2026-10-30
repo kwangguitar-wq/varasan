@@ -10,6 +10,7 @@ import { useToast } from '../lib/toast';
 import { PdfReader } from '../components/PdfReader';
 import { BookReader } from '../components/BookReader';
 import { EpubPageView, PdfPageView } from '../components/BookPages';
+import { loadPdfBytes } from '../lib/pdfSource';
 import { paginateChapters } from '../lib/paginate';
 import type { EpubPage } from '../lib/paginate';
 import { Icon } from '../components/Icons';
@@ -133,11 +134,11 @@ export function Reader() {
     if (content?.kind !== 'pdf' || !content.fileUrl) return;
     let cancelled = false;
     let loaded: PDFDocumentProxy | null = null;
-    // Same-origin request: cookies are unnecessary and would make a redirected
-    // CDN response fail CORS (the Blob CDN answers with `*`).
-    pdfjs
-      .getDocument({ url: content.fileUrl })
-      .promise.then(async (document) => {
+    // The book is fetched window by window first: a plain GET would come back
+    // as only the first window of a big file and pdf.js would reject it.
+    loadPdfBytes(content.fileUrl)
+      .then((data) => pdfjs.getDocument({ data }).promise)
+      .then(async (document) => {
         if (cancelled) {
           void document.destroy();
           return;

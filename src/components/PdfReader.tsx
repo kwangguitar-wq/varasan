@@ -3,6 +3,7 @@ import * as pdfjs from 'pdfjs-dist';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { Icon } from './Icons';
+import { loadPdfBytes } from '../lib/pdfSource';
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -135,11 +136,11 @@ export function PdfReader({ url, page, zoom, onPage, onTotal }: PdfReaderProps) 
     let loaded: PDFDocumentProxy | null = null;
     setDoc(null);
     setError(null);
-    // No credentials: the file is requested from our own origin, and sending
-    // cookies would break any redirected CDN response (CORS answers `*`).
-    pdfjs
-      .getDocument({ url })
-      .promise.then((document) => {
+    // Fetched as explicit windows: a plain GET returns only the first window of
+    // a big book and pdf.js then misses the trailer (see loadPdfBytes).
+    loadPdfBytes(url)
+      .then((data) => pdfjs.getDocument({ data }).promise)
+      .then((document) => {
         if (cancelled) {
           void document.destroy();
           return;

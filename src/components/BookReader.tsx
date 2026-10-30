@@ -1,7 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { Icon } from './Icons';
-import { CurlLeaf, curlBend, curlMetrics } from './CurlLeaf';
+import { CurlLeaf } from './CurlLeaf';
 import { playPageTurn } from '../lib/paperSound';
 
 /** Slow enough to read as paper being lifted, not as a screen flip. */
@@ -411,13 +411,6 @@ export function BookReader({
   const base = leaf
     ? { left: leaf.plan.baseLeft, right: leaf.plan.baseRight }
     : { left: info.left, right: info.right };
-  const progress = leaf
-    ? Math.min(1, Math.max(0, (leaf.plan.dir === 'next' ? -leaf.angle : leaf.angle + 180) / 180))
-    : 0;
-  const cast = Math.sin(Math.PI * progress) * (leaf ? 1 : 0);
-  const curl = leaf
-    ? curlMetrics(leaf.angle, leaf.plan.dir === 'next' ? 1 : -1, curlBend(leaf.angle), pageWidth)
-    : { span: pageWidth, lift: 0 };
   const leafEdge = spread ? 'right' : 'single';
 
   const pageStyle: CSSProperties = { width: pageWidth, height: pageHeight };
@@ -489,50 +482,28 @@ export function BookReader({
           </div>
 
           {leaf ? (
-            <>
-              <div
-                className="book-cast"
-                aria-hidden="true"
-                style={{
-                  // The lifted sheet hides its own footprint, so the shadow only shows
-                  // as a soft band around the free edge where it leaves the page.
-                  // A sheet that stands edge-on covers no page, so its shadow fades with
-                  // the width it still covers instead of smudging the spread.
-                  opacity:
-                    cast *
-                    (0.35 + Math.min(1, curl.lift / pageWidth) * 0.45) *
-                    Math.min(1, curl.span / pageWidth),
-                  left: (spread ? pageWidth : 0) + Math.max(0, curl.span) - 35,
-                  width: 70,
-                  height: pageHeight,
-                }}
-              />
-              <CurlLeaf
-                className="book-turn-leaf"
-                angle={leaf.angle}
-                dir={leaf.plan.dir === 'next' ? 1 : -1}
-                bend={curlBend(leaf.angle)}
-                width={pageWidth}
-                height={pageHeight}
-                edge={leafEdge}
-                front={leaf.plan.front ? <PageContent page={leaf.plan.front} render={renderPage} /> : null}
-                back={leaf.plan.back ? <PageContent page={leaf.plan.back} render={renderPage} /> : null}
-                style={{
-                  left: spread ? pageWidth : 0,
-                  // Strips carry their own absolute angles, so the root never rotates.
-                  transform: 'translateZ(0.6px)',
-                }}
-                ariaHidden
-              />
-            </>
+            <CurlLeaf
+              className="book-turn-leaf"
+              shaded
+              angle={leaf.angle}
+              width={pageWidth}
+              height={pageHeight}
+              edge={leafEdge}
+              front={leaf.plan.front ? <PageContent page={leaf.plan.front} render={renderPage} /> : null}
+              back={leaf.plan.back ? <PageContent page={leaf.plan.back} render={renderPage} /> : null}
+              style={{
+                left: spread ? pageWidth : 0,
+                // The whole sheet swings on its spine, so the browser animates one
+                // composited transform instead of repainting twenty page slices.
+                transform: `translateZ(1px) rotateY(${leaf.angle}deg)`,
+              }}
+              ariaHidden
+            />
           ) : null}
 
           {coverVisible ? (
             <CurlLeaf
-              flat
               angle={coverAngle}
-              dir={1}
-              bend={0}
               width={pageWidth}
               height={pageHeight}
               edge={leafEdge}
