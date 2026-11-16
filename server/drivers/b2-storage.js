@@ -37,7 +37,11 @@ export function createB2Storage(env) {
     const response = await client.fetch(url, options);
     if (!response.ok && response.status !== 404) {
       const detail = await response.text().catch(() => '');
-      throw new Error(`Backblaze B2 S3 API error ${response.status}: ${detail.slice(0, 500)}`);
+      const requestId = response.headers.get('x-amz-request-id') || response.headers.get('x-bz-request-id') || 'unavailable';
+      const hostId = response.headers.get('x-amz-id-2') || 'unavailable';
+      const method = options.method || 'GET';
+      const path = new URL(url).pathname;
+      throw new Error(`Backblaze B2 S3 API error ${response.status} (${method} ${path}); requestId=${requestId}; hostId=${hostId}; response=${detail.slice(0, 500) || '(empty response)'}`);
     }
     return response;
   }
