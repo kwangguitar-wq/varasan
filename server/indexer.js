@@ -248,6 +248,33 @@ export async function readPdf(buffer, { maxPages = 400, standardFontDataUrl } = 
   return { text: parts.join('\n\n'), pageCount: total };
 }
 
+/** Page count plus document metadata, without extracting any page text. */
+export async function readPdfInfo(buffer) {
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const doc = await pdfjs.getDocument({
+    data: new Uint8Array(buffer),
+    useSystemFonts: true,
+    isEvalSupported: false,
+    disableFontFace: true,
+  }).promise;
+  try {
+    const pages = doc.numPages;
+    let title = null;
+    let author = null;
+    try {
+      const metadata = await doc.getMetadata();
+      const info = metadata?.info ?? {};
+      title = typeof info.Title === 'string' && info.Title.trim() ? info.Title.trim() : null;
+      author = typeof info.Author === 'string' && info.Author.trim() ? info.Author.trim() : null;
+    } catch {
+      // Damaged metadata must not cost the book its page count.
+    }
+    return { pages, title, author };
+  } finally {
+    await doc.destroy().catch(() => {});
+  }
+}
+
 export function makeExcerpt(text, limit = 320) {
   const compact = normalize(text).replace(/\s+/g, ' ').trim();
   return compact.length > limit ? `${compact.slice(0, limit).trimEnd()}…` : compact;

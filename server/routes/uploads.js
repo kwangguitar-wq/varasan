@@ -8,6 +8,7 @@ import { randomUUID } from 'node:crypto';
 import { db, nowIso, runtime } from '../db.js';
 import { canManageContent } from '../auth.js';
 import { contentTypeFor, deleteObjects, getObject, putObject, uploadUrl } from '../storage.js';
+import { writeBookMeta } from '../restore.js';
 import { attachStoredFile, serializeForClient } from './publications.js';
 
 const router = express.Router();
@@ -138,6 +139,7 @@ router.post('/:id/finish', canManageContent, async (req, res, next) => {
       await db
         .prepare('UPDATE publications SET cover_url = ?, updated_at = ? WHERE id = ?')
         .run(uploadUrl(`covers/${filename}`), nowIso(), session.publication_id);
+      await writeBookMeta(session.publication_id);
     } else {
       // The browser measures the page count while uploading; prefer it over the
       // server-side PDF parser, which may be missing assets on the host.

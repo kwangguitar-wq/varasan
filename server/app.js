@@ -8,6 +8,7 @@ import userRoutes from './routes/users.js';
 import analyticsRoutes from './routes/analytics.js';
 import discoverRoutes from './routes/discover.js';
 import uploadRoutes from './routes/uploads.js';
+import maintenanceRoutes from './routes/maintenance.js';
 
 export function createApp() {
   const app = express();
@@ -40,6 +41,7 @@ export function createApp() {
   app.use('/api/analytics', analyticsRoutes);
   app.use('/api', taxonomyRoutes);
   app.use('/api', discoverRoutes);
+  app.use('/api/maintenance', maintenanceRoutes);
 
   app.use('/api', (_req, res) => {
     res.status(404).json({ error: 'ไม่พบ API ที่ร้องขอ' });

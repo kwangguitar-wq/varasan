@@ -48,6 +48,17 @@ export function createFsStorage(uploadDir) {
     async exists(key) {
       return fs.existsSync(resolve(key));
     },
+    async list(prefix) {
+      if (!fs.existsSync(uploadDir)) return [];
+      const walk = (dir) =>
+        fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+          const full = path.join(dir, entry.name);
+          return entry.isDirectory()
+            ? walk(full)
+            : [path.relative(uploadDir, full).split(path.sep).join('/')];
+        });
+      return walk(uploadDir).filter((key) => key.startsWith(prefix)).sort();
+    },
     async delete(key) {
       const target = resolve(key);
       if (target.startsWith(uploadDir)) fs.rmSync(target, { force: true });

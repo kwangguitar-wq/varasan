@@ -100,6 +100,13 @@ export async function statObject(key) {
   return object ? { size: object.size, contentType: object.contentType } : null;
 }
 
+/** Every stored key under `prefix`, so rows can be rebuilt from the files. */
+export async function listKeys(prefix = '') {
+  const current = getStorageDriver();
+  if (typeof current.list !== 'function') return [];
+  return current.list(prefix);
+}
+
 /** Browser-usable CDN links, or null when files must be proxied (private store). */
 export async function objectLink(key) {
   const current = getStorageDriver();

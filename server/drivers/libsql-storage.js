@@ -97,6 +97,12 @@ export function createLibsqlStorage(client) {
     async link() {
       return null;
     },
+    async list(prefix) {
+      const result = await query('SELECT key FROM upload_objects WHERE key LIKE ? ORDER BY key', [
+        `${prefix}%`,
+      ]);
+      return result.rows.map((row) => String(row[0]));
+    },
     async delete(key) {
       await query('DELETE FROM upload_objects WHERE key = ?', [key]);
     },

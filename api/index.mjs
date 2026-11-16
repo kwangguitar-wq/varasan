@@ -4,6 +4,7 @@
 import { app } from '../server/app.js';
 import { cloudConfig, configureCloud, ensureCloudSchema, ensureUploadSchema, isCloudConfigured } from '../server/cloud.js';
 import { installDomPolyfills } from '../server/dom-polyfills.js';
+import { restoreOnBoot } from '../server/restore.js';
 import { getObject, getStorageDriver } from '../server/storage.js';
 
 // pdf.js needs DOMMatrix even for text extraction, and Node does not provide it,
@@ -27,6 +28,10 @@ async function boot() {
   const client = configureCloud(settings);
   await ensureCloudSchema(client);
   await ensureUploadSchema(client);
+  // A database that was recreated (a fresh Turso branch per deployment) leaves
+  // the uploaded books in Blob with no row pointing at them: rebuild those rows
+  // before serving, so the library never comes back empty while files exist.
+  await restoreOnBoot();
   // configureCloud() has picked the storage backend for this deployment: Vercel
   // Blob when a token is configured, otherwise the database itself, so a
   // read-only Function bundle never needs a writable disk.

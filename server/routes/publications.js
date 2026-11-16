@@ -13,6 +13,7 @@ import {
   saveKeywords,
 } from '../indexer.js';
 import { generateCoverSvg } from '../covers.js';
+import { writeBookMeta } from '../restore.js';
 import { basePublicationQuery, listPublications, serializePublication } from '../serialize.js';
 import { runPublicationQuery } from '../search.js';
 import { contentTypeFor, deleteObjects, getObject, getText, keyFromUrl, objectLink, putObject, uploadUrl } from '../storage.js';
@@ -590,6 +591,9 @@ router.patch('/:id', canManageContent, uploader, async (req, res, next) => {
       await tryEnsureGeneratedCover({ ...refreshed, category_name: existing.category_name });
     }
 
+    // Keep the sidecar in step with edits, so a rebuilt database restores the
+    // corrected title, category and owner rather than the upload-time values.
+    await writeBookMeta(existing.id);
     const finalRow = await db.prepare(`${basePublicationQuery()} WHERE p.id = ?`).get(existing.id);
     res.json({ publication: serializePublication(finalRow) });
   } catch (error) {
@@ -639,6 +643,8 @@ export async function attachStoredFile(publicationId, { filename, buffer }, { pa
     .run(ingested.fileUrl, ingested.fileType, ingested.fileSize, ingested.pages, publication.id);
   const updated = await db.prepare('SELECT * FROM publications WHERE id = ?').get(publication.id);
   await reindex(updated, ingested.text);
+  // The sidecar is what lets a rebuilt database recover this book's metadata.
+  await writeBookMeta(publication.id);
   return serializeForClient(publication.id);
 }
 

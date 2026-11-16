@@ -125,6 +125,17 @@ export function createBlobStorage({ token }) {
       if (!info) return null;
       return { url: info.url, downloadUrl: info.downloadUrl ?? info.url };
     },
+    /** Every key under `prefix`, paged, for rebuilding rows from the store. */
+    async list(prefix) {
+      const keys = [];
+      let cursor;
+      do {
+        const page = await list({ prefix, cursor, ...auth, limit: 1000 });
+        for (const blob of page.blobs) keys.push(blob.pathname);
+        cursor = page.hasMore ? page.cursor : undefined;
+      } while (cursor);
+      return keys;
+    },
     async delete(key) {
       await del(key, auth);
     },
