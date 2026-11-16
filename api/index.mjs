@@ -4,6 +4,7 @@
 import { app } from '../server/app.js';
 import { cloudConfig, configureCloud, ensureCloudSchema, ensureUploadSchema, isCloudConfigured } from '../server/cloud.js';
 import { installDomPolyfills } from '../server/dom-polyfills.js';
+import { migrateOnBoot } from '../server/migrate-storage.js';
 import { restoreOnBoot } from '../server/restore.js';
 import { getObject, getStorageDriver } from '../server/storage.js';
 
@@ -28,6 +29,9 @@ async function boot() {
   const client = configureCloud(settings);
   await ensureCloudSchema(client);
   await ensureUploadSchema(client);
+  // Files that were kept inside the database while no bucket was configured
+  // move into the bucket first, so the restore below can see them.
+  await migrateOnBoot();
   // A database that was recreated (a fresh Turso branch per deployment) leaves
   // the uploaded books in Blob with no row pointing at them: rebuild those rows
   // before serving, so the library never comes back empty while files exist.
