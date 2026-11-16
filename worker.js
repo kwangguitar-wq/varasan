@@ -1,6 +1,6 @@
 // Cloudflare Workers entry point for Nakhonmaesot Library.
-// Express 5 runs on the runtime's node:http server bridge; D1 replaces
-// node:sqlite, R2 replaces the uploads directory and assets serve the SPA.
+// Express 5 runs on the runtime's node:http server bridge; D1 stores application data,
+// Backblaze B2 stores uploaded files, and assets serve the SPA.
 import { handleAsNodeRequest } from 'cloudflare:node';
 import { env } from 'cloudflare:workers';
 import * as pdfjsWorker from 'pdfjs-dist/legacy/build/pdf.worker.mjs';
@@ -8,7 +8,7 @@ import { installDomPolyfills } from './server/dom-polyfills.js';
 import { app } from './server/app.js';
 import { runtime, setDatabaseDriver } from './server/db.js';
 import { createD1Driver } from './server/drivers/d1.js';
-import { createR2Storage } from './server/drivers/r2-storage.js';
+import { createB2Storage } from './server/drivers/b2-storage.js';
 import { getObject, setStorageDriver } from './server/storage.js';
 import { ensureDatabase } from './server/seed-import.js';
 
@@ -17,11 +17,11 @@ globalThis.pdfjsWorker = pdfjsWorker;
 
 runtime.platform = 'worker';
 runtime.maxUploadBytes = 64 * 1024 * 1024;
-runtime.storageBackend = 'r2';
+runtime.storageBackend = 'backblaze-b2';
 runtime.databaseHost = 'd1';
 
 setDatabaseDriver(createD1Driver(env.DB));
-setStorageDriver(createR2Storage(env.FILES));
+setStorageDriver(createB2Storage(env));
 
 const PORT = 3000;
 app.listen(PORT);
