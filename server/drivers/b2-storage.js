@@ -8,7 +8,12 @@ import { contentTypeFor } from '../storage.js';
  * B2_REGION (for example us-west-004), and B2_BUCKET.
  */
 export function createB2Storage(env) {
-  const { B2_KEY_ID, B2_APPLICATION_KEY, B2_ENDPOINT, B2_REGION, B2_BUCKET } = env;
+  // Public bucket connection details are fallback constants because some dashboard
+  // build pipelines omit plain vars from the Worker env. Credentials remain Secrets.
+  const B2_ENDPOINT = env.B2_ENDPOINT || 'https://s3.us-east-005.backblazeb2.com';
+  const B2_REGION = env.B2_REGION || 'us-east-005';
+  const B2_BUCKET = env.B2_BUCKET || 'nakhonmaesot-library-files';
+  const { B2_KEY_ID, B2_APPLICATION_KEY } = env;
   const required = { B2_KEY_ID, B2_APPLICATION_KEY, B2_ENDPOINT, B2_REGION, B2_BUCKET };
   const missing = Object.entries(required)
     .filter(([, value]) => !value)
