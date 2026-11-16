@@ -4,6 +4,11 @@
   "main": "worker.js",
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "B2_BUCKET": "nakhonmaesot-library-files",
+    "B2_ENDPOINT": "https://s3.us-east-005.backblazeb2.com",
+    "B2_REGION": "us-east-005"
+  },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
