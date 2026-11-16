@@ -105,17 +105,27 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     if (name.length < 2) return res.status(400).json({ error: 'ชื่อต้องมีอย่างน้อย 2 ตัวอักษร' });
     const affiliation = req.body?.affiliation !== undefined ? String(req.body.affiliation).trim() || null : req.user.affiliation;
     const bio = req.body?.bio !== undefined ? String(req.body.bio).trim().slice(0, 400) || null : req.user.bio;
-    await db.prepare('UPDATE users SET name = ?, affiliation = ?, bio = ? WHERE id = ?').run(name, affiliation, bio, req.user.id);
 
+    // Validate a password change before writing any profile fields. Previously,
+    // a wrong current password returned 400 after name/affiliation/bio had
+    // already been committed, leaving the user with a misleading partial save.
+    let passwordHash = null;
     if (req.body?.newPassword) {
       const current = await db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.user.id);
-      if (!verifyPassword(String(req.body.currentPassword ?? ''), current.password_hash)) {
+      if (!current || !verifyPassword(String(req.body.currentPassword ?? ''), current.password_hash)) {
         return res.status(400).json({ error: 'รหัสผ่านปัจจุบันไม่ถูกต้อง' });
       }
       const next = String(req.body.newPassword);
       if (next.length < 8) return res.status(400).json({ error: 'รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร' });
-      await db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(next), req.user.id);
+      passwordHash = hashPassword(next);
     }
+
+    await db
+      .prepare(
+        `UPDATE users SET name = ?, affiliation = ?, bio = ?,
+          password_hash = COALESCE(?, password_hash) WHERE id = ?`,
+      )
+      .run(name, affiliation, bio, passwordHash, req.user.id);
     const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
     res.json({ user: publicUser(user) });
   } catch (error) {
