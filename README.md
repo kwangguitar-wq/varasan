@@ -207,11 +207,20 @@ Function ตัวเดียวที่ `api/index.mjs` (Express ตัวเ
 | ส่วน | บน Vercel | ตัวแปรสภาพแวดล้อม |
 | --- | --- | --- |
 | ฐานข้อมูล | Turso (libSQL — ภาษา SQL เดียวกับ SQLite) | `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` |
-| ไฟล์อัปโหลด/ปก/PDF | Vercel Blob (แนะนำ) หรือตาราง `upload_objects` ใน Turso | `BLOB_READ_WRITE_TOKEN` (ไม่บังคับ) |
+| ไฟล์อัปโหลด/ปก/PDF | Cloudflare R2 (แนะนำ — ไฟล์อยู่แยกจากฐานข้อมูล) หรือ Vercel Blob หรือตาราง `upload_objects` ใน Turso | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` หรือ `BLOB_READ_WRITE_TOKEN` |
 
-การเลือกที่เก็บไฟล์ทำอัตโนมัติ: ถ้ามี `BLOB_READ_WRITE_TOKEN` จะใช้ Blob,
-ถ้าไม่มีจะเก็บไฟล์ในฐานข้อมูล Turso แทน (ดิสก์ของ Function เขียนไม่ได้)
-กำหนดเองได้ด้วย `FILE_STORAGE=auto|blob|db|fs`
+การเลือกที่เก็บไฟล์ทำอัตโนมัติ: ถ้าตั้งค่า R2 ครบจะใช้ R2, ถ้าไม่มีแต่มี
+`BLOB_READ_WRITE_TOKEN` จะใช้ Blob, ถ้าไม่มีเลยจะเก็บไฟล์ในฐานข้อมูล Turso
+แทน (ดิสก์ของ Function เขียนไม่ได้) กำหนดเองได้ด้วย
+`FILE_STORAGE=auto|r2|blob|db|fs`
+
+R2 ใช้ S3 API (ไม่ต้องมี Worker binding) จึงใช้ได้จาก Vercel: สร้าง bucket ที่
+Cloudflare → R2 แล้วสร้าง API token แบบ Object Read & Write เอา Access Key ID /
+Secret มาตั้งเป็นตัวแปรข้างต้น ไม่ต้องเปิด public access เพราะไฟล์ถูกส่งผ่าน
+proxy `/uploads/*` แบบ Range request อยู่แล้ว
+
+ถ้าตั้ง `FILE_STORAGE=r2` ไว้แต่ค่าไม่ครบ ระบบจะ **ปิดการอัปโหลด** พร้อมบอก
+ชื่อตัวแปรที่ขาด แทนที่จะเก็บไฟล์ลงฐานข้อมูลซึ่งจะหายไปเมื่อดีพลอยใหม่
 
 Blob store ต้องสร้างเป็นแบบ **Public** ถ้าต้องการให้ไฟล์ใหญ่ถูกส่งต่อผ่าน CDN
 (โหมด Public/Private เปลี่ยนภายหลังไม่ได้) — โค้ดรองรับทั้งสองแบบ: store แบบ private
@@ -221,8 +230,10 @@ Blob store ต้องสร้างเป็นแบบ **Public** ถ้า
 
 1. สร้างฐานข้อมูล Turso ผ่าน Vercel → Storage (Marketplace) แล้วเชื่อมกับโปรเจกต์
    — Vercel จะใส่ `TURSO_DATABASE_URL` และ `TURSO_AUTH_TOKEN` ให้เอง
-2. (ไม่บังคับ) สร้าง Blob store (Vercel → Storage → Blob) แล้วเชื่อมกับโปรเจกต์
-   — จะได้ `BLOB_READ_WRITE_TOKEN`; ถ้าไม่มี ระบบจะเก็บไฟล์ในฐานข้อมูลให้เลย
+2. สร้าง bucket บน Cloudflare R2 แล้วใส่ `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`,
+   `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` (และ `FILE_STORAGE=r2`) ใน Environment
+   Variables — ทางเลือกอื่นคือ Vercel Blob (`BLOB_READ_WRITE_TOKEN`); ถ้าไม่ตั้ง
+   ทั้งสองอย่าง ระบบจะเก็บไฟล์ในฐานข้อมูลซึ่งจะหายเมื่อฐานข้อมูลถูกสร้างใหม่
 3. Import repository นี้ใน Vercel แล้วกด Deploy
 
 `vercel.json` ตั้งค่า build ไว้เป็น `npm run build && node scripts/seed-cloud.mjs`
