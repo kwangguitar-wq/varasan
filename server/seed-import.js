@@ -36,7 +36,14 @@ async function bootstrap(env) {
   else await env.DB.batch(UPLOAD_SCHEMA_STATEMENTS.map((sql) => env.DB.prepare(sql)));
   const snapshot = await loadManifest(env);
   await ensureSeedData(env, snapshot);
-  await ensureSeedUploads(env, snapshot);
+  // B2 is an external file store. A temporary B2 authorization/outage must not
+  // block D1-backed login, catalog and other API routes. Missing seed files are
+  // retried on the next cold start after the B2 issue is corrected.
+  try {
+    await ensureSeedUploads(env, snapshot);
+  } catch (error) {
+    console.error('[nakhonmaesot:seed] B2 seed-file sync failed; continuing with D1:', error);
+  }
 }
 
 async function schemaReady(env) {
