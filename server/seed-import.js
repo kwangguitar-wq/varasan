@@ -1,5 +1,5 @@
 // First-run bootstrap for the deployed Worker: create the D1 schema, load the
-// bundled SQL snapshot once, and mirror bundled uploads into R2.
+// bundled SQL snapshot once, and mirror bundled uploads into object storage.
 //
 // Hosting allowances count written rows, so the import must be one-shot and
 // resumable: a request that gets cut off mid-import continues from the last
@@ -311,9 +311,9 @@ async function ensureSeedUploads(env, snapshot) {
   const missing = [];
   for (let i = 0; i < files.length; i += 16) {
     const chunk = files.slice(i, i + 16);
-    const checks = await Promise.all(chunk.map((key) => env.FILES.head(key)));
-    checks.forEach((head, index) => {
-      if (!head) missing.push(chunk[index]);
+    const checks = await Promise.all(chunk.map((key) => storage.exists(key)));
+    checks.forEach((exists, index) => {
+      if (!exists) missing.push(chunk[index]);
     });
   }
   if (!missing.length) return;
