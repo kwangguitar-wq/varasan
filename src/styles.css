@@ -3,20 +3,20 @@
    ============================================================ */
 
 :root {
-  --bg: #f7f6f1;
-  --bg-soft: #f0eee7;
+  --bg: #f5f9ff;
+  --bg-soft: #eaf2ff;
   --surface: #ffffff;
-  --surface-2: #fbfaf6;
+  --surface-2: #f8fbff;
   --ink: #111820;
   --ink-2: #2c3742;
   --muted: #68737f;
   --faint: #8d97a2;
-  --line: #e4e1d8;
-  --line-strong: #d3cfc3;
-  --accent: #2563eb;
+  --line: #dce7f5;
+  --line-strong: #c4d5eb;
+  --accent: #0ea5e9;
   --accent-strong: #1d4ed8;
-  --accent-soft: #dbeafe;
-  --indigo: #4338ca;
+  --accent-soft: #e0f2fe;
+  --indigo: #1e40af;
   --gold: #b45309;
   --rose: #be185d;
   --danger: #b91c1c;
@@ -45,10 +45,10 @@
   --faint: #74828f;
   --line: #22303c;
   --line-strong: #2d3c4a;
-  --accent: #60a5fa;
+  --accent: #38bdf8;
   --accent-strong: #93c5fd;
-  --accent-soft: #172554;
-  --indigo: #a5b4fc;
+  --accent-soft: #0c2348;
+  --indigo: #93c5fd;
   --gold: #fbbf24;
   --rose: #f472b6;
   --danger: #f87171;
@@ -2138,7 +2138,7 @@ button.chip:hover {
 }
 
 .cta-band .eyebrow {
-  color: #99f6e4;
+  color: #bae6fd;
 }
 
 .cta-band h2 {
@@ -2952,7 +2952,7 @@ a.keyword-pill:hover {
 .auth-panel {
   position: relative;
   padding: 40px 48px;
-  background: linear-gradient(150deg, #0b2b2a, #0f3d3a 40%, #121a2e);
+  background: linear-gradient(150deg, #0b1f4d, #123d78 42%, #087eae);
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -4306,8 +4306,8 @@ a.keyword-pill:hover {
   gap: 10px;
   height: 100%;
   padding: 14% 12%;
-  color: #f4efe2;
-  background: linear-gradient(150deg, #103d3a, #0d1f24 70%);
+  color: #eff6ff;
+  background: linear-gradient(150deg, #123d78, #0b1f4d 70%);
 }
 
 .book-cover-fallback span {
