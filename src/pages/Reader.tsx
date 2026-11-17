@@ -67,6 +67,7 @@ export function Reader() {
   const [chapter, setChapter] = useState(0);
   const [mode, setMode] = useState<Mode>('book');
   const [zoom, setZoom] = useState(1);
+  const [bookZoom, setBookZoom] = useState(1);
   const [fontSize, setFontSize] = useState(18);
   const [theme, setTheme] = useState<Theme>('light');
   const [panel, setPanel] = useState<'toc' | 'settings' | null>(null);
@@ -567,6 +568,7 @@ export function Reader() {
             showCover={showCover}
             onOpenCover={() => setShowCover(false)}
             onPage={setPage}
+            zoom={bookZoom}
           />
           {/* Rasterising a page takes long enough to stall the first frames of a
               turn, so the pages just ahead are drawn while the reader idles. */}
@@ -776,6 +778,18 @@ export function Reader() {
               >
                 <Icon name="book" size={16} /> เปิดดูปกแล้วเปิดเล่มใหม่
               </button>
+            </div>
+          ) : null}
+
+          {mode === 'book' && canBook ? (
+            <div className="reader-setting">
+              <h4>ขยายหน้าหนังสือ</h4>
+              <div className="stepper">
+                <button type="button" onClick={() => setBookZoom((value) => Math.max(1, Number((value - 0.1).toFixed(1))))} aria-label="ย่อหนังสือ">−</button>
+                <span>{Math.round(bookZoom * 100)}%</span>
+                <button type="button" onClick={() => setBookZoom((value) => Math.min(1.8, Number((value + 0.1).toFixed(1))))} aria-label="ขยายหนังสือ">+</button>
+              </div>
+              <p className="reader-progress-text">ปรับขนาดหนังสือเพื่ออ่านข้อความได้ชัดขึ้น</p>
             </div>
           ) : null}
 
