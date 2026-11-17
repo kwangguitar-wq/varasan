@@ -688,7 +688,8 @@ button.chip:hover {
   background: color-mix(in srgb, var(--bg) 82%, transparent);
   backdrop-filter: blur(18px) saturate(1.4);
   -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  border-bottom: 1px solid var(--line);
+  border-top: 2px solid color-mix(in srgb, var(--accent) 65%, transparent);
+  border-bottom: 1px solid var(--line-strong);
 }
 
 .header-inner {
