@@ -80,7 +80,7 @@ async function serveUpload(url, env, request) {
         const seedResponse = await env.ASSETS.fetch(
           new Request(new URL(`/seed/uploads/${key.split('/').map(encodeURIComponent).join('/')}`, url.origin), {
             method: isHead ? 'HEAD' : 'GET',
-            headers: request.headers,
+            headers: new Headers([...request.headers].filter(([name]) => name.toLowerCase() !== 'range')),
           }),
         );
         if (seedResponse.ok) {
