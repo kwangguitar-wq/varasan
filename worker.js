@@ -60,11 +60,72 @@ async function serveUpload(url, env, request) {
   }
 
   if (!object) {
-    object = await getObject(key);
-    if (!object) {
-      // A cold isolate may not have mirrored the bundled uploads yet.
-      await ensureDatabase(env);
+    let storageError = null;
+    try {
       object = await getObject(key);
+      if (!object) {
+        // A cold isolate may not have mirrored the bundled uploads yet.
+        await ensureDatabase(env);
+        object = await getObject(key);
+      }
+    } catch (error) {
+      storageError = error;
+    }
+
+    // Bundled seed books/covers are part of the deployed static assets. Serve
+    // those directly when B2 is capped or temporarily unavailable, avoiding
+    // repeated failed Class B requests for demo content.
+    if (!object) {
+      try {
+        const seedResponse = await env.ASSETS.fetch(
+          new Request(new URL(`/seed/uploads/${key.split('/').map(encodeURIComponent).join('/')}`, url.origin), {
+            method: isHead ? 'HEAD' : 'GET',
+            headers: request.headers,
+          }),
+        );
+        if (seedResponse.ok) {
+          const seedHeaders = new Headers(seedResponse.headers);
+          seedHeaders.set('Cache-Control', 'public, max-age=86400, s-maxage=604800');
+          seedHeaders.set('Accept-Ranges', 'bytes');
+          const seedBytes = isHead ? null : await seedResponse.arrayBuffer();
+          const seedSize = Number(seedHeaders.get('content-length')) || (seedBytes ? seedBytes.byteLength : 0);
+          if (!isHead && seedBytes) {
+            try {
+              await cache.put(cacheKey, new Response(seedBytes.slice(0), {
+                status: 200,
+                headers: seedHeaders,
+              }));
+            } catch {
+              // Cache is optional; the deployed seed asset remains available.
+            }
+          }
+          if (request.headers.has('range') && !isHead && seedBytes) {
+            const rangeMatch = /bytes=(\\d*)-(\\d*)/.exec(request.headers.get('range'));
+            if (rangeMatch) {
+              const rangeStart = rangeMatch[1] ? Number(rangeMatch[1]) : 0;
+              const rangeEnd = rangeMatch[2] ? Math.min(Number(rangeMatch[2]), seedSize - 1) : seedSize - 1;
+              if (rangeStart <= rangeEnd && rangeStart < seedSize) {
+                const part = new Uint8Array(seedBytes).subarray(rangeStart, rangeEnd + 1);
+                seedHeaders.set('Content-Range', `bytes ${rangeStart}-${rangeEnd}/${seedSize}`);
+                seedHeaders.set('Content-Length', String(part.length));
+                return new Response(part, { status: 206, headers: seedHeaders });
+              }
+            }
+          }
+          seedHeaders.set('Content-Length', String(seedSize));
+          return new Response(seedBytes, { status: 200, headers: seedHeaders });
+        }
+      } catch {
+        // Continue to the storage error response below.
+      }
+    }
+
+    if (storageError) {
+      console.error('[varasan:uploads] object storage read failed:', storageError);
+      return new Response('File storage is temporarily unavailable. Please try again after the storage limit resets.', {
+        status: 503,
+        headers: { 'Cache-Control': 'no-store', 'Retry-After': '3600' },
+      });
     }
     if (!object) return new Response('Not found', { status: 404 });
 
