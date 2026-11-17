@@ -33,17 +33,61 @@ async function serveUpload(url, env, request) {
   if (!key || key.includes('..')) return new Response('Not found', { status: 404 });
 
   const isHead = request.method === 'HEAD';
-  let object = await getObject(key);
-  if (!object) {
-    // A cold isolate may not have mirrored the bundled uploads yet.
-    await ensureDatabase(env);
-    object = await getObject(key);
+  // Cache the complete object at the Cloudflare edge. Range requests are served
+  // from that cached object, so PDF.js page navigation does not create a B2
+  // Class B transaction for every byte range.
+  const cache = caches.default;
+  const cacheKey = new Request(new URL(url.pathname, url.origin).toString(), { method: 'GET' });
+  let object = null;
+  let cachedResponse = null;
+
+  if (request.method === 'GET' || isHead) {
+    try {
+      cachedResponse = await cache.match(cacheKey);
+      if (cachedResponse) {
+        const bytes = new Uint8Array(await cachedResponse.arrayBuffer());
+        object = {
+          bytes,
+          size: bytes.length,
+          contentType: cachedResponse.headers.get('content-type') || 'application/octet-stream',
+        };
+      }
+    } catch {
+      // Cache is an optimization only; continue to the durable object store.
+      cachedResponse = null;
+      object = null;
+    }
   }
-  if (!object) return new Response('Not found', { status: 404 });
+
+  if (!object) {
+    object = await getObject(key);
+    if (!object) {
+      // A cold isolate may not have mirrored the bundled uploads yet.
+      await ensureDatabase(env);
+      object = await getObject(key);
+    }
+    if (!object) return new Response('Not found', { status: 404 });
+
+    // Cache successful full-object reads only. Never cache errors or partial
+    // responses. Cache failures must not prevent a book from being served.
+    if (request.method === 'GET') {
+      const cacheHeaders = new Headers({
+        'Content-Type': object.contentType,
+        'Content-Length': String(object.size),
+        'Cache-Control': 'public, max-age=86400, s-maxage=604800',
+        'Accept-Ranges': 'bytes',
+      });
+      try {
+        await cache.put(cacheKey, new Response(object.bytes, { status: 200, headers: cacheHeaders }));
+      } catch {
+        // Large objects or transient cache failures fall back to B2 on next read.
+      }
+    }
+  }
 
   const headers = new Headers({
     'Content-Type': object.contentType,
-    'Cache-Control': 'public, max-age=604800',
+    'Cache-Control': 'public, max-age=86400, s-maxage=604800',
     'Accept-Ranges': 'bytes',
   });
 
