@@ -7,6 +7,36 @@ import { Icon } from '../../components/Icons';
 import { useToast } from '../../lib/toast';
 import { formatFileSize, typeLabels } from '../../lib/format';
 import { uploadInChunks, type UploadConfig } from '../../lib/upload';
+import * as pdfjs from 'pdfjs-dist';
+import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { unzipSync } from 'fflate';
+pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+const DRAFT_KEY = 'varasan-admin-editor-draft-v1';
+async function firstPageCover(file: File): Promise<File | null> {
+  try {
+    if (/\.pdf$/i.test(file.name) || file.type === 'application/pdf') {
+      const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+      try {
+        const page = await doc.getPage(1);
+        const base = page.getViewport({ scale: 1 });
+        const viewport = page.getViewport({ scale: Math.min(1.5, 900 / base.width) });
+        const canvas = document.createElement('canvas'); canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height);
+        const context = canvas.getContext('2d'); if (!context) return null;
+        await page.render({ canvas, canvasContext: context, viewport }).promise;
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.88));
+        return blob ? new File([blob], 'auto-cover.jpg', { type: 'image/jpeg' }) : null;
+      } finally { await doc.destroy(); }
+    }
+    if (/\.zip$/i.test(file.name)) {
+      const archive = unzipSync(new Uint8Array(await file.arrayBuffer()));
+      const path = Object.keys(archive).filter((name) => /\.(jpe?g|png|webp)$/i.test(name)).sort((a,b) => a.localeCompare(b, undefined, { numeric: true }))[0];
+      if (!path) return null;
+      const type = /\.png$/i.test(path) ? 'image/png' : /\.webp$/i.test(path) ? 'image/webp' : 'image/jpeg';
+      return new File([archive[path]], 'auto-cover.' + path.split('.').pop(), { type });
+    }
+  } catch { return null; }
+  return null;
+}
 
 const EMPTY_FORM = {
   title: '',
@@ -44,6 +74,8 @@ export function AdminEditor() {
   const [dragging, setDragging] = useState(false);
   const [uploadConfig, setUploadConfig] = useState<UploadConfig | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
+  const [draftReady, setDraftReady] = useState(false);
+  const [autoCover, setAutoCover] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -58,14 +90,14 @@ export function AdminEditor() {
 
   useEffect(() => {
     if (!id) {
-      setForm(EMPTY_FORM);
-      setExisting(null);
-      return;
+      try { const saved = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); if (saved?.form) setForm({ ...EMPTY_FORM, ...saved.form }); if (Array.isArray(saved?.tags)) setTags(saved.tags); } catch { /* ignore invalid draft */ }
+      setExisting(null); setDraftReady(true); return;
     }
     api
       .get<{ publication: Publication }>(`/api/publications/${id}`)
       .then(({ publication }) => {
         setExisting(publication);
+        setDraftReady(true);
         setTags((publication.tags ?? []).map((tag) => tag.name));
         setCoverPreview(publication.coverUrl);
         setForm({
@@ -89,6 +121,11 @@ export function AdminEditor() {
       .catch((err: Error) => toast.show(err.message, 'error'));
   }, [id, toast]);
 
+  useEffect(() => {
+    if (!draftReady || editing) return;
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, tags })); } catch { /* storage unavailable */ }
+  }, [draftReady, editing, form, tags]);
+
   const addTag = (value: string) => {
     const clean = value.trim().replace(/,$/, '');
     if (!clean) return;
@@ -97,8 +134,17 @@ export function AdminEditor() {
   };
 
   const onCoverChange = (selected: File | null) => {
-    setCover(selected);
+    setCover(selected); setAutoCover(false);
     if (selected) setCoverPreview(URL.createObjectURL(selected));
+    else if (file) void firstPageCover(file).then((generated) => { if (generated) { setCover(generated); setCoverPreview(URL.createObjectURL(generated)); setAutoCover(true); } });
+    else setCoverPreview(existing?.coverUrl ?? null);
+  };
+  const onBookFileChange = async (selected: File | null) => {
+    setFile(selected);
+    if (!selected || cover && !autoCover) return;
+    const generated = await firstPageCover(selected);
+    if (generated) { setCover(generated); setCoverPreview(URL.createObjectURL(generated)); setAutoCover(true); }
+    else if (!existing?.coverUrl) { setCover(null); setCoverPreview(null); setAutoCover(false); }
   };
 
   const submit = async (event: React.FormEvent) => {
@@ -121,6 +167,7 @@ export function AdminEditor() {
       if (uploadConfig?.mode === 'chunked') await saveChunked();
       else await saveMultipart();
       toast.show(editing ? 'บันทึกการแก้ไขและจัดทำดัชนีใหม่แล้ว' : 'เพิ่มรายการและจัดทำดัชนีคำสำคัญแล้ว', 'success');
+      try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
       navigate('/admin/content');
     } catch (error) {
       toast.show((error as Error).message, 'error');
@@ -405,7 +452,7 @@ export function AdminEditor() {
                 event.preventDefault();
                 setDragging(false);
                 const dropped = event.dataTransfer.files?.[0];
-                if (dropped) setFile(dropped);
+                if (dropped) void onBookFileChange(dropped);
               }}
               onClick={() => fileInputRef.current?.click()}
               role="button"
@@ -419,7 +466,7 @@ export function AdminEditor() {
                 type="file"
                 accept=".pdf,.epub,.zip"
                 hidden
-                onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+                onChange={(event) => void onBookFileChange(event.target.files?.[0] ?? null)}
               />
               <span className="dropzone-icon">
                 <Icon name={file ? 'file' : 'upload'} size={26} />
@@ -434,6 +481,7 @@ export function AdminEditor() {
                     onClick={(event) => {
                       event.stopPropagation();
                       setFile(null);
+                      if (autoCover && !existing?.coverUrl) { setCover(null); setCoverPreview(null); setAutoCover(false); }
                       if (fileInputRef.current) fileInputRef.current.value = '';
                     }}
                   >
@@ -535,7 +583,7 @@ export function AdminEditor() {
               <button type="button" className="btn btn-outline btn-sm btn-block" onClick={() => coverInputRef.current?.click()}>
                 <Icon name="upload" size={15} /> อัปโหลดรูปปก
               </button>
-              <p className="hint">อัตราส่วนแนะนำ 2:3 · JPG, PNG, WebP · ไม่เกิน 8 MB</p>
+              <p className="hint">{autoCover ? 'สร้างปกจากหน้าแรกของไฟล์อัตโนมัติแล้ว' : 'หากไม่แนบรูปปก ระบบใช้หน้าแรกของ PDF หรือภาพแรกใน ZIP เป็นปก'} · อัตราส่วนแนะนำ 2:3</p>
             </div>
           </section>
 
