@@ -18,8 +18,8 @@ export function Logo({ compact = false }: { compact?: boolean }) {
           <circle cx="20" cy="9" r="1.7" fill="white" />
           <defs>
             <linearGradient id="brand-gradient" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#14b8a6" />
-              <stop offset="1" stopColor="#0f766e" />
+              <stop stopColor="#38bdf8" />
+              <stop offset="1" stopColor="#1d4ed8" />
             </linearGradient>
           </defs>
         </svg>
