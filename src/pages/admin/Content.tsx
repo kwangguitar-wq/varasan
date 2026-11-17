@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, queryString } from '../../lib/api';
-import type { Publication, SearchResult } from '../../lib/types';
+import type { Category, Publication, SearchResult } from '../../lib/types';
 import { AdminLayout } from '../../components/AdminLayout';
 import { Cover } from '../../components/PublicationCard';
 import { Icon } from '../../components/Icons';
@@ -12,13 +12,22 @@ import { formatDate, formatFileSize, formatNumber, typeLabels } from '../../lib/
 export function AdminContent() {
   const [params, setParams] = useSearchParams();
   const [result, setResult] = useState<SearchResult | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(params.get('q') ?? '');
   const { user } = useAuth();
   const toast = useToast();
   const status = params.get('status') ?? 'all';
   const type = params.get('type') ?? '';
+  const category = params.get('category') ?? '';
   const page = Number(params.get('page') ?? '1');
+
+  useEffect(() => {
+    api
+      .get<{ categories: Category[] }>('/api/categories')
+      .then((data) => setCategories(data.categories))
+      .catch(() => setCategories([]));
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -38,6 +47,7 @@ export function AdminContent() {
     q: params.get('q'),
     status,
     type,
+    category,
     page,
     limit: 20,
     sort: 'newest',
@@ -98,9 +108,14 @@ export function AdminContent() {
       title="จัดการเนื้อหา"
       description="อัปโหลด จัดหมวดหมู่ และควบคุมการเผยแพร่ทรัพยากรสารสนเทศ"
       actions={
-        <Link to="/admin/content/new" className="btn btn-primary">
-          <Icon name="plus" size={17} /> เพิ่มรายการใหม่
-        </Link>
+        <div className="editor-actions">
+          <Link to="/admin/taxonomy" className="btn btn-outline">
+            <Icon name="tag" size={16} /> จัดการหมวดหมู่
+          </Link>
+          <Link to="/admin/content/new" className="btn btn-primary">
+            <Icon name="plus" size={17} /> เพิ่มรายการใหม่
+          </Link>
+        </div>
       }
     >
       <div className="admin-toolbar">
@@ -123,6 +138,19 @@ export function AdminContent() {
           {Object.entries(typeLabels).map(([value, label]) => (
             <option key={value} value={value}>
               {label}
+            </option>
+          ))}
+        </select>
+        <select
+          className="input"
+          value={category}
+          onChange={(event) => update('category', event.target.value)}
+          aria-label="กรองตามหมวดหมู่"
+        >
+          <option value="">ทุกหมวดหมู่</option>
+          {categories.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.name}
             </option>
           ))}
         </select>
