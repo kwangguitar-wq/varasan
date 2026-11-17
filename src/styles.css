@@ -11,8 +11,8 @@
   --ink-2: #2c3742;
   --muted: #68737f;
   --faint: #8d97a2;
-  --line: #dce7f5;
-  --line-strong: #c4d5eb;
+  --line: #cbdff5;
+  --line-strong: #9fc5ed;
   --accent: #0ea5e9;
   --accent-strong: #1d4ed8;
   --accent-soft: #e0f2fe;
@@ -43,8 +43,8 @@
   --ink-2: #d4dee7;
   --muted: #93a2b2;
   --faint: #74828f;
-  --line: #22303c;
-  --line-strong: #2d3c4a;
+  --line: #24466b;
+  --line-strong: #37618d;
   --accent: #38bdf8;
   --accent-strong: #93c5fd;
   --accent-soft: #0c2348;
@@ -269,14 +269,14 @@ textarea {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  background: linear-gradient(135deg, var(--accent-strong), var(--accent));
   color: #fff;
-  box-shadow: 0 10px 24px -14px rgba(37, 99, 235, 0.28);
+  box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 16px 30px -16px rgba(37, 99, 235, 0.32);
+  box-shadow: 0 16px 30px -16px color-mix(in srgb, var(--accent) 50%, transparent);
 }
 
 .btn-outline {
@@ -7233,4 +7233,36 @@ a.keyword-pill:hover {
   .pwa-install-actions .btn {
     flex: 1;
   }
+}
+
+
+/* ---------------------------------------------------------- blue borders & icon system */
+:where(.icon-button, .reader-icon, .empty-icon, .floating-icon,
+  .category-icon, .feature-icon, .stat-icon, .activity-icon,
+  .role-icon, .dropzone-icon, .pwa-install-icon) {
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--line));
+}
+
+:where(.icon-button, .reader-icon, .empty-icon, .floating-icon,
+  .category-icon, .feature-icon, .stat-icon, .activity-icon,
+  .role-icon, .dropzone-icon, .searchbar-icon, .pwa-install-icon) {
+  color: var(--accent-strong);
+}
+
+:where(.icon-button, .reader-icon, .icon-button-lg) svg,
+:where(.searchbar-icon, .suggest-item, .aside-list, .demo-card,
+  .quick-action, .admin-search, .upload-hints, .pwa-install-steps) > svg {
+  stroke: currentColor;
+}
+
+:where(.icon-button:hover, .reader-icon:hover, .icon-button.active,
+  .reader-icon.active) {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+:where(.btn-outline, .chip-outline, .input, .account-menu summary,
+  .account-dropdown, .empty-state, .skeleton-card, .toast,
+  .stat-card, .admin-card, .dropzone) {
+  border-color: var(--line);
 }
