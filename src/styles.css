@@ -13,9 +13,9 @@
   --faint: #8d97a2;
   --line: #e4e1d8;
   --line-strong: #d3cfc3;
-  --accent: #0f766e;
-  --accent-strong: #0b5d57;
-  --accent-soft: #e3f3f0;
+  --accent: #2563eb;
+  --accent-strong: #1d4ed8;
+  --accent-soft: #dbeafe;
   --indigo: #4338ca;
   --gold: #b45309;
   --rose: #be185d;
@@ -45,9 +45,9 @@
   --faint: #74828f;
   --line: #22303c;
   --line-strong: #2d3c4a;
-  --accent: #2dd4bf;
-  --accent-strong: #5eead4;
-  --accent-soft: #0e2b29;
+  --accent: #60a5fa;
+  --accent-strong: #93c5fd;
+  --accent-soft: #172554;
   --indigo: #a5b4fc;
   --gold: #fbbf24;
   --rose: #f472b6;
@@ -269,14 +269,14 @@ textarea {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #0f766e, #0d9488);
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
   color: #fff;
-  box-shadow: 0 10px 24px -14px rgba(15, 118, 110, 0.9);
+  box-shadow: 0 10px 24px -14px rgba(37, 99, 235, 0.28);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 16px 30px -16px rgba(15, 118, 110, 0.95);
+  box-shadow: 0 16px 30px -16px rgba(37, 99, 235, 0.32);
 }
 
 .btn-outline {
@@ -716,7 +716,7 @@ button.chip:hover {
   height: 38px;
   display: block;
   border-radius: 12px;
-  box-shadow: 0 8px 18px -10px rgba(15, 118, 110, 0.9);
+  box-shadow: 0 8px 18px -10px rgba(37, 99, 235, 0.28);
 }
 
 .brand-mark svg {
@@ -1404,7 +1404,7 @@ button.chip:hover {
 }
 
 .file-pill.flip {
-  background: rgba(15, 118, 110, 0.14);
+  background: rgba(37, 99, 235, 0.14);
   color: var(--accent);
 }
 
@@ -1893,7 +1893,7 @@ button.chip:hover {
   place-items: center;
   background: var(--accent);
   color: #fff;
-  box-shadow: 0 10px 20px -10px rgba(15, 118, 110, 0.9);
+  box-shadow: 0 10px 20px -10px rgba(37, 99, 235, 0.28);
 }
 
 /* ---------------------------------------------------------- split / popular */
@@ -2118,7 +2118,7 @@ button.chip:hover {
   gap: 32px;
   padding: 44px;
   border-radius: var(--radius-lg);
-  background: linear-gradient(120deg, #0f766e, #115e59 55%, #1e1b4b);
+  background: linear-gradient(120deg, #2563eb, #1d4ed8 55%, #1e3a8a);
   color: #fff;
   position: relative;
   overflow: hidden;
@@ -2163,7 +2163,7 @@ button.chip:hover {
 
 .cta-actions .btn-primary {
   background: #fff;
-  color: #0b5d57;
+  color: #1d4ed8;
 }
 
 .cta-actions .btn-ghost {
@@ -3358,7 +3358,7 @@ a.keyword-pill:hover {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: rgba(15, 118, 110, 0.92);
+  background: rgba(37, 99, 235, 0.92);
   color: #fff;
   display: grid;
   place-items: center;
@@ -3554,7 +3554,7 @@ a.keyword-pill:hover {
 }
 
 .reader-icon.active {
-  color: #5eead4;
+  color: #93c5fd;
 }
 
 /* paper sound switched off */
@@ -3619,7 +3619,7 @@ a.keyword-pill:hover {
 .reader-progress-line span {
   display: block;
   height: 100%;
-  background: #2dd4bf;
+  background: #60a5fa;
   transition: width 0.3s ease;
 }
 
@@ -4213,7 +4213,7 @@ a.keyword-pill:hover {
 }
 
 .book-text a {
-  color: #0f766e;
+  color: #2563eb;
 }
 
 .book-text hr {
@@ -5047,8 +5047,8 @@ a.keyword-pill:hover {
 }
 
 .stat-delta.up {
-  color: #0f766e;
-  background: rgba(15, 118, 110, 0.1);
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.1);
 }
 
 .stat-delta.down {
@@ -5301,8 +5301,8 @@ a.keyword-pill:hover {
 }
 
 .activity-read {
-  background: rgba(15, 118, 110, 0.12);
-  color: #0f766e;
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
 }
 
 .activity-download {
@@ -5575,7 +5575,7 @@ a.keyword-pill:hover {
 }
 
 .status-published {
-  background: rgba(15, 118, 110, 0.12);
+  background: rgba(37, 99, 235, 0.12);
   color: var(--accent-strong);
 }
 
@@ -5621,7 +5621,7 @@ a.keyword-pill:hover {
 }
 
 .role-editor .role-icon {
-  background: rgba(15, 118, 110, 0.12);
+  background: rgba(37, 99, 235, 0.12);
   color: var(--accent);
 }
 
@@ -7144,7 +7144,7 @@ a.keyword-pill:hover {
   height: 44px;
   border-radius: 14px;
   color: #fff;
-  background: linear-gradient(135deg, #14b8a6, #0f766e);
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
 }
 
 .pwa-install-body {
