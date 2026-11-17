@@ -30,6 +30,7 @@ interface BookReaderProps {
   showCover: boolean;
   onOpenCover: () => void;
   onPage: (page: number) => void;
+  zoom?: number;
 }
 
 interface SpreadInfo {
@@ -190,6 +191,7 @@ export function BookReader({
   showCover,
   onOpenCover,
   onPage,
+  zoom = 1,
 }: BookReaderProps) {
   const [leaf, setLeaf] = useState<Leaf | null>(null);
   const [phase, setPhase] = useState<Phase>(showCover ? 'closed' : 'gone');
@@ -456,7 +458,7 @@ export function BookReader({
       onPointerCancel={cancelDrag}
       onClick={onClick}
     >
-      <div className="book-scene">
+      <div className="book-scene" style={{ transform: `scale(${zoom})` }}>
         <div className="book-wrap" style={wrapStyle}>
           <div className="book-shadow" aria-hidden="true" />
           <div className="book-spread" style={{ width: pageWidth * (spread ? 2 : 1), height: pageHeight }}>
