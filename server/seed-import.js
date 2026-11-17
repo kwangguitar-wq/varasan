@@ -15,17 +15,16 @@ const BATCH_STATEMENTS = 200;
 // A claim younger than this means another isolate is still importing.
 const CLAIM_MS = 120_000;
 
-let ready = null;
-let manifest = null;
+// Keep only settled state at module scope. A Promise created by one Worker
+// request must not be shared with another request: its continuation is bound
+// to the request context that created it and can be dropped after that request ends.
+let ready = false;
+let manifest;
 
-export function ensureDatabase(env) {
-  if (!ready) {
-    ready = bootstrap(env).catch((error) => {
-      ready = null;
-      throw error;
-    });
-  }
-  return ready;
+export async function ensureDatabase(env) {
+  if (ready) return;
+  await bootstrap(env);
+  ready = true;
 }
 
 async function bootstrap(env) {
@@ -65,12 +64,14 @@ function asset(env, name) {
   return env.ASSETS.fetch(new Request(`https://assets/seed/${name}`));
 }
 
-/** The snapshot manifest is read at most once per isolate. */
-function loadManifest(env) {
-  if (!manifest) {
-    manifest = asset(env, 'manifest.json')
-      .then((response) => (response.ok ? response.json() : null))
-      .catch(() => null);
+/** Cache only the resolved manifest value, never a request-bound Promise. */
+async function loadManifest(env) {
+  if (manifest !== undefined) return manifest;
+  try {
+    const response = await asset(env, 'manifest.json');
+    manifest = response.ok ? await response.json() : null;
+  } catch {
+    manifest = null;
   }
   return manifest;
 }
