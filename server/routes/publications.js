@@ -7,7 +7,6 @@ import {
   buildKeywordIndex,
   makeExcerpt,
   readingMinutes,
-  readPdf,
   readEpub,
   readFlipbookZip,
   saveKeywords,
@@ -144,22 +143,17 @@ async function ingestFile(publication, file, { stored = false, pages: reportedPa
 
   if (ext === '.pdf') {
     if (!stored) await putObject(`${base}/book.pdf`, buffer, 'application/pdf');
-    // The file is already stored, so a parser that cannot read it (odd font,
-    // huge page, missing dependency on the host) must not lose the upload.
-    let pdf = { pageCount: 1, text: '' };
-    try {
-      pdf = await readPdf(buffer);
-    } catch (error) {
-      console.warn('[nakhonmaesot] อ่านข้อความจาก PDF ไม่สำเร็จ — เก็บไฟล์ไว้และบันทึกรายการต่อ', error?.message ?? error);
-    }
-    // The uploader counts pages in the browser, so its number wins when present.
-    const pageCount = Number(reportedPages) > 0 ? Number(reportedPages) : pdf.pageCount;
+    // PDF parsing is intentionally client-side. Reading hundreds of pages in a
+    // Cloudflare Worker can exceed its CPU budget and fail the entire upload.
+    // The browser supplies the page count; if it cannot read the PDF, keep a
+    // safe placeholder and never block storage of the original document.
+    const pageCount = Number(reportedPages) > 0 ? Number(reportedPages) : 1;
     return {
       fileType: 'pdf',
       fileUrl: `${publicBase}/book.pdf`,
       fileSize: buffer.length,
       pages: Math.max(pageCount, 1),
-      text: pdf.text,
+      text: '',
       defaults: { type: 'ebook' },
     };
   }
@@ -337,22 +331,9 @@ router.get('/:id/content', async (req, res, next) => {
       const payload = JSON.parse(raw);
       return res.json({ kind: 'flipbook', title: row.title, pages: payload.pages });
     }
-    // Uploads indexed before the PDF parser worked on the server recorded a
-    // single page. Repair the count from the stored file the first time the
-    // book is opened, so the item page shows the real number of pages.
-    if (Number(row.pages ?? 0) <= 1 && row.file_url) {
-      const object = await getObject(keyFromUrl(row.file_url)).catch(() => null);
-      if (object && object.size <= 30 * 1024 * 1024) {
-        try {
-          const pdf = await readPdf(object.bytes);
-          const pages = Math.max(pdf.pageCount, 1);
-          await db.prepare('UPDATE publications SET pages = ? WHERE id = ?').run(pages, row.id);
-          row.pages = pages;
-        } catch (error) {
-          console.warn('[nakhonmaesot] นับจำนวนหน้า PDF ไม่สำเร็จ', error?.message ?? error);
-        }
-      }
-    }
+    // Never parse an uploaded PDF inside a Worker request. The browser reports
+    // its page count during chunked upload; parsing here can exceed the Worker CPU
+    // budget and turn an otherwise successful read into HTTP 503.
 
     res.json({ kind: 'pdf', title: row.title, fileUrl: row.file_url, pages: row.pages });
   } catch (error) {
