@@ -12,6 +12,7 @@ import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { unzipSync } from 'fflate';
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 const DRAFT_KEY = 'varasan-admin-editor-draft-v1';
+const PENDING_PUBLICATION_KEY = 'varasan-admin-pending-publication-v1';
 async function firstPageCover(file: File): Promise<File | null> {
   try {
     if (/\.pdf$/i.test(file.name) || file.type === 'application/pdf') {
@@ -213,15 +214,32 @@ export function AdminEditor() {
     if (editing) {
       await api.patch(`/api/publications/${targetId}`, metadata);
     } else {
-      const created = await api.post<{ publication: Publication }>('/api/publications', {
-        ...metadata,
-        status: 'draft',
-      });
-      targetId = created.publication.id;
+      // If a previous upload failed after creating its D1 row, resume that
+      // publication instead of creating a duplicate on the next Save click.
+      const pendingId = Number(localStorage.getItem(PENDING_PUBLICATION_KEY));
+      if (Number.isInteger(pendingId) && pendingId > 0) {
+        try {
+          await api.get(`/api/publications/${pendingId}`);
+          targetId = pendingId;
+          await api.patch(`/api/publications/${targetId}`, metadata);
+        } catch {
+          localStorage.removeItem(PENDING_PUBLICATION_KEY);
+          targetId = 0;
+        }
+      }
+      if (!targetId) {
+        const created = await api.post<{ publication: Publication }>('/api/publications', {
+          ...metadata,
+          status: 'draft',
+        });
+        targetId = created.publication.id;
+        localStorage.setItem(PENDING_PUBLICATION_KEY, String(targetId));
+      }
     }
     if (file) await uploadInChunks(targetId, 'file', file, setProgress);
     if (cover) await uploadInChunks(targetId, 'cover', cover);
     await api.patch(`/api/publications/${targetId}`, { status: form.status });
+    if (!editing) localStorage.removeItem(PENDING_PUBLICATION_KEY);
   };
 
   const suggestions = tagLibrary.filter(
