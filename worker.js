@@ -100,7 +100,7 @@ async function serveUpload(url, env, request) {
             }
           }
           if (request.headers.has('range') && !isHead && seedBytes) {
-            const rangeMatch = /bytes=(\\d*)-(\\d*)/.exec(request.headers.get('range'));
+            const rangeMatch = /bytes=(\d*)-(\d*)/.exec(request.headers.get('range'));
             if (rangeMatch) {
               const rangeStart = rangeMatch[1] ? Number(rangeMatch[1]) : 0;
               const rangeEnd = rangeMatch[2] ? Math.min(Number(rangeMatch[2]), seedSize - 1) : seedSize - 1;
