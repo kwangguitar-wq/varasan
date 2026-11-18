@@ -7,9 +7,9 @@ let driver = null;
 export const runtime = {
   platform: 'node',
   maxUploadBytes: 300 * 1024 * 1024,
-  // 'multipart' sends the book in the create request. 'chunked' splits it into
-  // pieces because the host rejects bodies above a few megabytes (Vercel: 4.5 MB).
-  uploadMode: 'multipart',
+  // Cloudflare Workers have a strict CPU budget. Always upload books in chunks;
+  // the browser sends metadata first and the file in small independent requests.
+  uploadMode: 'chunked',
   chunkBytes: 4 * 1024 * 1024,
   // Set by the host entry point when uploads cannot be stored (e.g. Vercel
   // without BLOB_READ_WRITE_TOKEN): requests then fail with this explanation
