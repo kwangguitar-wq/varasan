@@ -35,14 +35,12 @@ async function bootstrap(env) {
   else await env.DB.batch(UPLOAD_SCHEMA_STATEMENTS.map((sql) => env.DB.prepare(sql)));
   const snapshot = await loadManifest(env);
   await ensureSeedData(env, snapshot);
-  // B2 is an external file store. A temporary B2 authorization/outage must not
-  // block D1-backed login, catalog and other API routes. Missing seed files are
-  // retried on the next cold start after the B2 issue is corrected.
-  try {
-    await ensureSeedUploads(env, snapshot);
-  } catch (error) {
-    console.error('[nakhonmaesot:seed] B2 seed-file sync failed; continuing with D1:', error);
-  }
+  // Do not HEAD-check every bundled seed object on every cold Worker isolate.
+  // Backblaze counts those checks as Class B transactions, and isolates are
+  // frequently created across Cloudflare locations. Seed objects are served
+  // directly from the deployed static assets by worker.js when absent from B2;
+  // user-uploaded objects continue to use B2. This avoids thousands of B2
+  // metadata requests without changing or deleting any stored book.
 }
 
 async function schemaReady(env) {
