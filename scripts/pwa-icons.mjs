@@ -20,8 +20,8 @@ function iconSvg({ size, maskable }) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 40 40">
     <defs>
       <linearGradient id="g" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-        <stop stop-color="#14b8a6" />
-        <stop offset="1" stop-color="#0f766e" />
+        <stop stop-color="#38bdf8" />
+        <stop offset="1" stop-color="#1d4ed8" />
       </linearGradient>
     </defs>
     <rect width="40" height="40" fill="url(#g)" />
