@@ -59,11 +59,12 @@ async function findPublication(idOrSlug) {
     .get(key, Number(key) || -1);
   if (exact) return exact;
 
-  // Resolve the clean, title-based URL emitted to clients. This also keeps
-  // older stored slugs working as aliases without rewriting publication rows.
-  const candidates = await db.prepare(`${basePublicationQuery()} ORDER BY p.id ASC`).all();
-  const match = candidates.find((row) => slugify(row.title) === key);
-  return match ?? null;
+  // Resolve clean title-id URLs in one indexed lookup. The ID suffix avoids
+  // collisions and keeps legacy stored slugs working without rewriting rows.
+  const match = key.match(/^(.*)-(\d+)$/);
+  if (!match) return null;
+  const row = await db.prepare(`${basePublicationQuery()} WHERE p.id = ?`).get(Number(match[2]));
+  return row && slugify(row.title) === match[1] ? row : null;
 }
 
 function canAccess(row, user, { staff = false } = {}) {
