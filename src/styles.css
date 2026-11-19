@@ -3933,9 +3933,21 @@ a.keyword-pill:hover {
   inset: 0;
   overflow: hidden;
   background: #fdfcf7;
+  /* Each side is an independent face of the same 3D paper sheet.
+     Hide the reverse of each face so page 5 can never show through mirrored
+     while page 6 is rotating into view. */
+  transform-style: preserve-3d;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   box-shadow: 0 20px 38px -26px rgba(6, 12, 19, 0.75);
+}
+
+.book-leaf-front {
+  transform: rotateY(0deg) translateZ(0.1px);
+}
+
+.book-leaf-back {
+  transform: rotateY(180deg) translateZ(0.1px);
 }
 
 .book-leaf-front.is-right {
@@ -3948,7 +3960,6 @@ a.keyword-pill:hover {
 }
 
 .book-leaf-back {
-  transform: rotateY(180deg);
   border-radius: 3px 0 0 3px;
 }
 
