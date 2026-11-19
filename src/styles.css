@@ -3933,10 +3933,10 @@ a.keyword-pill:hover {
   inset: 0;
   overflow: hidden;
   background: #fdfcf7;
-  /* Each side is an independent face of the same 3D paper sheet.
-     Hide the reverse of each face so page 5 can never show through mirrored
-     while page 6 is rotating into view. */
-  transform-style: preserve-3d;
+  /* A face is a flat printed surface. Only the parent sheet participates
+     in 3D; keeping descendants flat prevents the front page's raster content
+     from leaking through the reverse face in Chromium/WebKit compositing. */
+  transform-style: flat;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   box-shadow: 0 20px 38px -26px rgba(6, 12, 19, 0.75);
