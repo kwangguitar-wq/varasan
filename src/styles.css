@@ -3947,7 +3947,10 @@ a.keyword-pill:hover {
 }
 
 .book-leaf-back {
-  transform: rotateY(180deg) translateZ(0.1px);
+  /* Place the reverse face just outside the paper plane. A positive local
+     Z offset is rotated behind the sheet at 180deg and can let the front
+     artwork bleed through; the negative offset keeps the reverse face clear. */
+  transform: rotateY(180deg) translateZ(-0.6px);
 }
 
 .book-leaf-front.is-right {
