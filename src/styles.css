@@ -4032,6 +4032,70 @@ a.keyword-pill:hover {
   -webkit-backface-visibility: hidden;
 }
 
+/* Curved free-edge treatment: a moving fold ridge and a thin paper edge add
+   depth without cloning/rerendering PDF page contents on every animation frame. */
+.book-leaf-fold {
+  position: absolute;
+  z-index: 5;
+  top: calc(var(--curl-y, 78%) - var(--curl-edge, 0px));
+  right: -1px;
+  width: clamp(24px, 8%, 72px);
+  height: calc(var(--curl-edge, 0px) * 2 + 2px);
+  min-height: 2px;
+  pointer-events: none;
+  opacity: var(--curl-fold-opacity, 0);
+  transform: skewY(-8deg);
+  transform-origin: right center;
+  background: linear-gradient(90deg,
+    rgba(24, 18, 10, 0),
+    rgba(30, 22, 12, .12) 24%,
+    rgba(255, 255, 255, .88) 62%,
+    rgba(255, 255, 255, .18));
+  filter: drop-shadow(-3px 1px 3px rgba(20, 14, 8, .22));
+}
+.book-leaf-fold.is-back {
+  right: auto;
+  left: -1px;
+  transform: scaleX(-1) skewY(8deg);
+}
+.book-leaf-edge {
+  position: absolute;
+  z-index: 6;
+  top: 0;
+  right: 0;
+  width: 2px;
+  height: 100%;
+  pointer-events: none;
+  opacity: calc(var(--curl-progress, 0) * .72);
+  background: linear-gradient(180deg,
+    rgba(255,255,255,.8),
+    rgba(115,96,65,.5) 48%,
+    rgba(255,255,255,.65));
+  box-shadow: 2px 0 5px rgba(24,18,10,.22);
+}
+.book-leaf-edge.is-back {
+  right: auto;
+  left: 0;
+}
+.book-leaf-curl-light {
+  background:
+    radial-gradient(ellipse 23% 38% at 100% var(--curl-y, 78%),
+      rgba(255,255,255,.96) 0%,
+      rgba(255,255,255,.42) 22%,
+      rgba(25,19,12,.28) 54%,
+      transparent 100%),
+    linear-gradient(90deg, transparent 55%, rgba(28,20,10,.12));
+}
+.book-leaf-curl-light.is-back {
+  background:
+    radial-gradient(ellipse 23% 38% at 0% var(--curl-y, 78%),
+      rgba(255,255,255,.9) 0%,
+      rgba(255,255,255,.34) 22%,
+      rgba(25,19,12,.24) 54%,
+      transparent 100%),
+    linear-gradient(270deg, transparent 55%, rgba(28,20,10,.1));
+}
+
 /* Pages rendered ahead of time so a turn never starts with a blank sheet. */
 .book-preload {
   position: absolute;
