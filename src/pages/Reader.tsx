@@ -79,6 +79,11 @@ export function Reader() {
   const [fullscreen, setFullscreen] = useState(false);
   const [immersive, setImmersive] = useState(false);
   const [barHidden, setBarHidden] = useState(false);
+  const [autoFlip, setAutoFlip] = useState(false);
+  const [flipDelay, setFlipDelay] = useState(5000);
+  const [history, setHistory] = useState<number[]>([1]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const historyReady = useRef(false);
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [pdfRatio, setPdfRatio] = useState<number | null>(null);
   const [epubPages, setEpubPages] = useState<EpubPage[]>([]);
@@ -217,6 +222,37 @@ export function Reader() {
   }, [page]);
 
   const progressValue = useMemo(() => (total ? Math.min(1, page / total) : 0), [page, total]);
+
+  // Keep a small in-reader navigation history, similar to browser back/forward.
+  useEffect(() => {
+    if (!total) return;
+    if (!historyReady.current) {
+      historyReady.current = true;
+      setHistory([page]);
+      setHistoryIndex(0);
+      return;
+    }
+    setHistory((items) => {
+      if (items[historyIndex] === page) return items;
+      const nextItems = [...items.slice(0, historyIndex + 1), page].slice(-80);
+      setHistoryIndex(nextItems.length - 1);
+      return nextItems;
+    });
+  }, [page, total]);
+
+  useEffect(() => {
+    if (!autoFlip || !publication || !content || !total || showCover) return;
+    const timer = window.setInterval(() => {
+      setPage((current) => {
+        if (current >= total) {
+          setAutoFlip(false);
+          return current;
+        }
+        return Math.min(total, current + (pageSize?.spread ? 2 : 1));
+      });
+    }, flipDelay);
+    return () => window.clearInterval(timer);
+  }, [autoFlip, flipDelay, total, pageSize?.spread]);
 
   // Persist reading position (debounced).
   useEffect(() => {
@@ -380,6 +416,20 @@ export function Reader() {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
+  };
+
+  const historyBack = () => {
+    if (historyIndex <= 0) return;
+    const targetIndex = historyIndex - 1;
+    setHistoryIndex(targetIndex);
+    setPage(history[targetIndex]);
+  };
+
+  const historyForward = () => {
+    if (historyIndex >= history.length - 1) return;
+    const targetIndex = historyIndex + 1;
+    setHistoryIndex(targetIndex);
+    setPage(history[targetIndex]);
   };
 
   const jumpTo = (value: number) => {
@@ -632,6 +682,9 @@ export function Reader() {
 
       {!(kind === 'epub' && mode === 'scroll') ? (
         <div className="reader-bottom">
+          <button type="button" className="reader-nav-button" onClick={historyBack} disabled={historyIndex <= 0} aria-label="ย้อนกลับหน้าที่เคยอ่าน" title="ย้อนกลับ">
+            <Icon name="arrowLeft" size={17} />
+          </button>
           <button type="button" className="reader-nav-button" onClick={previous} disabled={page <= 1} aria-label="หน้าก่อนหน้า">
             <Icon name="chevronLeft" size={20} />
           </button>
@@ -648,6 +701,9 @@ export function Reader() {
             />
             <span>/ {total}</span>
           </div>
+          <button type="button" className="reader-nav-button" onClick={historyForward} disabled={historyIndex >= history.length - 1} aria-label="ไปข้างหน้าตามประวัติ" title="ไปข้างหน้า">
+            <Icon name="arrowRight" size={17} />
+          </button>
           <button type="button" className="reader-nav-button" onClick={next} disabled={page >= total} aria-label="หน้าถัดไป">
             <Icon name="chevronRight" size={20} />
           </button>
@@ -762,6 +818,24 @@ export function Reader() {
                   <Icon name="list" size={15} /> เลื่อนต่อเนื่อง
                 </button>
               </div>
+            </div>
+          ) : null}
+
+          {mode === 'book' && canBook ? (
+            <div className="reader-setting">
+              <h4>พลิกหน้าอัตโนมัติ</h4>
+              <div className="segmented">
+                <button type="button" className={autoFlip ? 'active' : ''} onClick={() => setAutoFlip((value) => !value)}>
+                  {autoFlip ? 'หยุดพลิกอัตโนมัติ' : 'เริ่มพลิกอัตโนมัติ'}
+                </button>
+              </div>
+              <label className="reader-auto-speed">ความเร็ว
+                <select value={flipDelay} onChange={(event) => setFlipDelay(Number(event.target.value))}>
+                  <option value={3000}>เร็ว (3 วินาที/ครั้ง)</option>
+                  <option value={5000}>ปกติ (5 วินาที/ครั้ง)</option>
+                  <option value={8000}>ช้า (8 วินาที/ครั้ง)</option>
+                </select>
+              </label>
             </div>
           ) : null}
 
