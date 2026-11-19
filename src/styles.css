@@ -3779,6 +3779,16 @@ a.keyword-pill:hover {
   cursor: grabbing;
 }
 
+.book-stage[data-zoomed='true'] {
+  cursor: grab;
+  touch-action: none;
+  overflow: hidden;
+}
+
+.book-stage[data-zoomed='true']:active {
+  cursor: grabbing;
+}
+
 .book-scene {
   position: relative;
   display: flex;
