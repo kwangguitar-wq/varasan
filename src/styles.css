@@ -3998,6 +3998,40 @@ a.keyword-pill:hover {
   will-change: opacity;
 }
 
+/* A soft moving highlight/shadow band makes the sheet appear to curl around
+   the exact height where it is being held, rather than rotating like a rigid card. */
+.book-leaf-curl-light {
+  position: absolute;
+  inset: -1px;
+  z-index: 4;
+  pointer-events: none;
+  opacity: var(--curl-shadow, 0.2);
+  background:
+    radial-gradient(ellipse 17% 34% at 100% var(--curl-y, 78%),
+      rgba(255,255,255,0.88) 0%,
+      rgba(255,255,255,0.34) 24%,
+      rgba(25,19,12,0.24) 58%,
+      transparent 100%),
+    radial-gradient(ellipse 17% 34% at 0% var(--curl-y, 78%),
+      rgba(255,255,255,0.7) 0%,
+      rgba(255,255,255,0.22) 24%,
+      rgba(25,19,12,0.22) 58%,
+      transparent 100%);
+  mix-blend-mode: multiply;
+  will-change: opacity, background-position;
+}
+.book-leaf-curl-light.is-back {
+  transform: scaleX(-1);
+  opacity: calc(var(--curl-shadow, 0.2) * 0.82);
+}
+.book-turn-leaf {
+  filter: drop-shadow(0 8px 10px rgba(20, 16, 10, 0.12));
+}
+.book-turn-leaf .book-leaf-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
 /* Pages rendered ahead of time so a turn never starts with a blank sheet. */
 .book-preload {
   position: absolute;
