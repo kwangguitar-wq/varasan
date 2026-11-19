@@ -619,6 +619,7 @@ export function Reader() {
             onOpenCover={() => setShowCover(false)}
             onPage={setPage}
             zoom={bookZoom}
+            onZoomToggle={() => setBookZoom((value) => (value > 1 ? 1 : 1.4))}
           />
           {/* Rasterising a page takes long enough to stall the first frames of a
               turn, so the pages just ahead are drawn while the reader idles. */}
