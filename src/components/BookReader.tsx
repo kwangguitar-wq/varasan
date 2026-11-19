@@ -31,6 +31,7 @@ interface BookReaderProps {
   onOpenCover: () => void;
   onPage: (page: number) => void;
   zoom?: number;
+  onZoomToggle?: () => void;
 }
 
 interface SpreadInfo {
@@ -192,6 +193,7 @@ export function BookReader({
   onOpenCover,
   onPage,
   zoom = 1,
+  onZoomToggle,
 }: BookReaderProps) {
   const [leaf, setLeaf] = useState<Leaf | null>(null);
   const [phase, setPhase] = useState<Phase>(showCover ? 'closed' : 'gone');
@@ -210,6 +212,7 @@ export function BookReader({
     pointerId: number;
   } | null>(null);
   const lastDragEnd = useRef(0);
+  const lastWheel = useRef(0);
   const leafRef = useRef<Leaf | null>(null);
   const covered = phase !== 'gone';
 
@@ -348,6 +351,23 @@ export function BookReader({
     else finishTurnBack(state.plan, state.angle);
   };
 
+  const onWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    if (covered || leafRef.current || Math.abs(event.deltaY) < 24) return;
+    const now = performance.now();
+    if (now - lastWheel.current < 650) return;
+    lastWheel.current = now;
+    event.preventDefault();
+    startTurn(event.deltaY > 0 ? 'next' : 'prev');
+  };
+
+  const onDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (covered || !onZoomToggle) return;
+    event.preventDefault();
+    event.stopPropagation();
+    lastDragEnd.current = performance.now();
+    onZoomToggle();
+  };
+
   const onClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (covered || leafRef.current) return;
     if (performance.now() - lastDragEnd.current < 350) return;
@@ -457,6 +477,8 @@ export function BookReader({
       onPointerUp={onPointerUp}
       onPointerCancel={cancelDrag}
       onClick={onClick}
+      onWheel={onWheel}
+      onDoubleClick={onDoubleClick}
     >
       <div className="book-scene" style={{ transform: `scale(${zoom})` }}>
         <div className="book-wrap" style={wrapStyle}>
