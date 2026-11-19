@@ -1,4 +1,4 @@
-import { db } from './db.js';
+import { db, slugify } from './db.js';
 
 const PUBLICATION_FIELDS = `
   p.id, p.slug, p.title, p.subtitle, p.type, p.description, p.abstract, p.author, p.publisher,
@@ -40,7 +40,8 @@ export function serializePublication(row, extra = {}) {
   }
   return {
     id: row.id,
-    slug: row.slug,
+    // Publish readable Thai slugs while keeping the stored database slug as a legacy alias.
+    slug: slugify(row.title),
     title: row.title,
     subtitle: row.subtitle,
     type: row.type,
