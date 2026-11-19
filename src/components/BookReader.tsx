@@ -82,11 +82,14 @@ function planTurn(dir: 'next' | 'prev', page: number, total: number, spread: boo
   }
   if (dir === 'next') {
     if (info.right == null || info.right >= total) return null;
+    // While the current right page turns, its reverse (the next page) must
+    // already be the left page underneath. Keeping the old left page here
+    // makes the spread jump sideways when the leaf disappears.
     const back = info.right + 1;
     const nextRight = info.right + 2;
     return {
       dir,
-      baseLeft: info.left,
+      baseLeft: back,
       baseRight: nextRight <= total ? nextRight : null,
       front: info.right,
       back,
@@ -94,12 +97,14 @@ function planTurn(dir: 'next' | 'prev', page: number, total: number, spread: boo
     };
   }
   if (info.left == null) return null;
+  // On a reverse turn, the back of the turning left sheet becomes the
+  // right-hand page. Do not leave the old right page underneath it.
   const baseLeft = info.left - 2;
   const previousPage = info.left - 1;
   return {
     dir,
     baseLeft: baseLeft >= 1 ? baseLeft : null,
-    baseRight: info.right,
+    baseRight: previousPage,
     front: info.left,
     back: previousPage,
     toPage: baseLeft >= 1 ? baseLeft : 1,
