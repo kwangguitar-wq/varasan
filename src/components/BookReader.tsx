@@ -54,6 +54,7 @@ interface Leaf {
   plan: TurnPlan;
   angle: number;
   grabY?: number;
+  grabX?: number;
 }
 
 type Phase = 'closed' | 'opening' | 'gone';
@@ -223,6 +224,10 @@ export function BookReader({
     active: boolean;
     angle: number;
     grabY: number;
+    grabX: number;
+    lastX: number;
+    lastAt: number;
+    velocity: number;
     pointerId: number;
   } | null>(null);
   const lastDragEnd = useRef(0);
@@ -298,10 +303,11 @@ export function BookReader({
     [onPage],
   );
 
-  const finishTurnBack = useCallback((plan: TurnPlan, angle: number, grabY = 0.78) => {
+  const finishTurnBack = useCallback((plan: TurnPlan, angle: number, grabY = 0.78, grabX = 0.94) => {
     const to = 0;
     playPageTurn(-1);
-    startTween(turnRaf, angle, to, 420, turnEase, (value) => setLeaf({ plan, angle: value, grabY }), () => setLeaf(null));
+    const duration = Math.max(260, Math.min(520, 260 + Math.abs(angle) * 1.1));
+    startTween(turnRaf, angle, to, duration, turnEase, (value) => setLeaf({ plan, angle: value, grabY, grabX }), () => setLeaf(null));
   }, []);
 
   const startTurn = useCallback(
@@ -337,7 +343,7 @@ export function BookReader({
     const dragState = drag.current;
     drag.current = null;
     if (!dragState?.active) return;
-    finishTurnBack(dragState.plan, dragState.angle, dragState.grabY);
+    finishTurnBack(dragState.plan, dragState.angle, dragState.grabY, dragState.grabX);
   }, [finishTurnBack]);
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -371,7 +377,11 @@ export function BookReader({
       plan,
       active: false,
       angle: 0,
-      grabY: Math.max(0.06, Math.min(0.94, y / Math.max(1, rect.height))),
+      grabY: Math.max(0.025, Math.min(0.975, y / Math.max(1, rect.height))),
+      grabX: Math.max(0.025, Math.min(0.975, x / Math.max(1, rect.width))),
+      lastX: event.clientX,
+      lastAt: performance.now(),
+      velocity: 0,
       pointerId: event.pointerId,
     };
   };
@@ -397,12 +407,19 @@ export function BookReader({
       state.active = true;
       stageRef.current?.setPointerCapture(event.pointerId);
     }
+    const now = performance.now();
+    const elapsed = Math.max(1, now - state.lastAt);
+    state.velocity = (event.clientX - state.lastX) / elapsed;
+    state.lastX = event.clientX;
+    state.lastAt = now;
     const unit = pageWidth || 1;
     const raw = (dx / unit) * 200;
     state.angle = state.plan.dir === 'next'
       ? Math.max(-180, Math.min(0, raw))
       : Math.max(0, Math.min(180, raw));
-    setLeaf({ plan: state.plan, angle: state.angle, grabY: state.grabY });
+    const rect = stageRef.current?.getBoundingClientRect();
+    if (rect) state.grabX = Math.max(0.025, Math.min(0.975, (event.clientX - rect.left) / rect.width));
+    setLeaf({ plan: state.plan, angle: state.angle, grabY: state.grabY, grabX: state.grabX });
   };
 
   const onPointerUp = () => {
@@ -418,9 +435,12 @@ export function BookReader({
     lastDragEnd.current = performance.now();
     // Commit only after the sheet has crossed the visual midpoint; this avoids
     // a page snapping forward while most of the paper is still on its old side.
-    const completed = state.plan.dir === 'next' ? state.angle < -100 : state.angle > 100;
+    const flick = state.plan.dir === 'next' ? state.velocity < -0.42 : state.velocity > 0.42;
+    const completed = state.plan.dir === 'next'
+      ? state.angle < -100 || (flick && Math.abs(state.angle) > 24)
+      : state.angle > 100 || (flick && Math.abs(state.angle) > 24);
     if (completed) finishTurn(state.plan, state.angle);
-    else finishTurnBack(state.plan, state.angle, state.grabY);
+    else finishTurnBack(state.plan, state.angle, state.grabY, state.grabX);
   };
 
   const onTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
@@ -610,6 +630,7 @@ export function BookReader({
               shaded
               angle={leaf.angle}
               curlY={leaf.grabY ?? 0.78}
+              curlX={leaf.grabX ?? 0.94}
               width={pageWidth}
               height={pageHeight}
               edge={leafEdge}
@@ -617,8 +638,8 @@ export function BookReader({
               back={leaf.plan.back ? <PageContent page={leaf.plan.back} render={renderPage} /> : null}
               style={{
                 left: spread ? (leaf.plan.dir === 'next' ? pageWidth : 0) : 0,
-                transformOrigin: leaf.plan.dir === 'next' ? 'left center' : 'right center',
-                transform: `translateZ(1px) rotateY(${leaf.angle}deg)`,
+                transformOrigin: `${leaf.plan.dir === 'next' ? 'left' : 'right'} ${((leaf.grabY ?? 0.78) * 100).toFixed(1)}%`,
+                transform: `translateZ(1px) rotateY(${leaf.angle}deg) rotateZ(${((leaf.grabY ?? 0.78) - 0.5) * Math.sin(Math.abs(leaf.angle) * Math.PI / 180) * (leaf.plan.dir === 'next' ? -7 : 7)}deg)`,
               }}
               ariaHidden
             />
