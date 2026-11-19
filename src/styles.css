@@ -3943,14 +3943,13 @@ a.keyword-pill:hover {
 }
 
 .book-leaf-front {
-  transform: rotateY(0deg) translateZ(0.1px);
+  /* Both faces share the exact same paper plane; avoid translateZ offsets,
+     which can put the reverse face in front of or behind the sheet after rotation. */
+  transform: rotateY(0deg);
 }
 
 .book-leaf-back {
-  /* Place the reverse face just outside the paper plane. A positive local
-     Z offset is rotated behind the sheet at 180deg and can let the front
-     artwork bleed through; the negative offset keeps the reverse face clear. */
-  transform: rotateY(180deg) translateZ(-0.6px);
+  transform: rotateY(180deg);
 }
 
 .book-leaf-front.is-right {
