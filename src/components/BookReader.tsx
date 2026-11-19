@@ -219,6 +219,8 @@ export function BookReader({
   const panStart = useRef<{ x: number; y: number; left: number; top: number; moved: boolean } | null>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const leafRef = useRef<Leaf | null>(null);
+  // Keep the completed sheet on top while the new spread is committed underneath it.
+  const committingTurn = useRef(false);
   const covered = phase !== 'gone';
 
   useEffect(() => {
@@ -269,8 +271,15 @@ export function BookReader({
       playPageTurn(plan.dir === 'next' ? 1 : -1);
       const to = plan.dir === 'next' ? -180 : 180;
       startTween(turnRaf, angle, to, duration, turnEase, (value) => setLeaf({ plan, angle: value }), () => {
-        setLeaf(null);
+        // First update the spread beneath the fully-turned sheet. Remove the sheet
+        // only after the browser has painted that matching spread, avoiding a flash
+        // where the right-hand page changes before the paper turn visually finishes.
+        committingTurn.current = true;
         onPage(plan.toPage);
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          setLeaf(null);
+          committingTurn.current = false;
+        }));
       });
     },
     [onPage],
@@ -297,8 +306,13 @@ export function BookReader({
         requestAnimationFrame(() => {
           if (leafRef.current?.plan !== plan) return;
           startTween(turnRaf, from, to, TURN_MS, turnEase, (value) => setLeaf({ plan, angle: value }), () => {
-            setLeaf(null);
+            // Keep the turned page visible until the destination spread is painted.
+            committingTurn.current = true;
             onPage(plan.toPage);
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+              setLeaf(null);
+              committingTurn.current = false;
+            }));
           });
         });
       });
@@ -486,6 +500,9 @@ export function BookReader({
 
   // A jump from the pager or tablet of contents wins over any running animation.
   useEffect(() => {
+    // A page change caused by a completed flip is intentional: let its final sheet
+    // remain in place until the matching underlying spread has rendered.
+    if (committingTurn.current) return;
     stopTween(turnRaf);
     setLeaf(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
