@@ -216,7 +216,7 @@ export function BookReader({
   const lastDragEnd = useRef(0);
   const lastWheel = useRef(0);
   const pinchStart = useRef<{ distance: number; zoom: number } | null>(null);
-  const panStart = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
+  const panStart = useRef<{ x: number; y: number; left: number; top: number; moved: boolean } | null>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const leafRef = useRef<Leaf | null>(null);
   const covered = phase !== 'gone';
@@ -224,6 +224,14 @@ export function BookReader({
   useEffect(() => {
     leafRef.current = leaf;
   }, [leaf]);
+
+  // Reset the drag offset when returning to the natural page size.
+  useEffect(() => {
+    if (zoom <= 1) {
+      setPan({ x: 0, y: 0 });
+      panStart.current = null;
+    }
+  }, [zoom]);
 
   useEffect(
     () => () => {
@@ -309,7 +317,8 @@ export function BookReader({
     if (covered || leafRef.current) return;
     if (zoom > 1) {
       if (event.pointerType === 'mouse' && event.button !== 0) return;
-      panStart.current = { x: event.clientX, y: event.clientY, left: pan.x, top: pan.y };
+      panStart.current = { x: event.clientX, y: event.clientY, left: pan.x, top: pan.y, moved: false };
+      event.preventDefault();
       event.currentTarget.setPointerCapture(event.pointerId);
       return;
     }
@@ -333,7 +342,10 @@ export function BookReader({
 
   const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (panStart.current && zoom > 1) {
-      setPan({ x: panStart.current.left + event.clientX - panStart.current.x, y: panStart.current.top + event.clientY - panStart.current.y });
+      const dx = event.clientX - panStart.current.x;
+      const dy = event.clientY - panStart.current.y;
+      if (Math.abs(dx) + Math.abs(dy) > 3) panStart.current.moved = true;
+      setPan({ x: panStart.current.left + dx, y: panStart.current.top + dy });
       return;
     }
     const state = drag.current;
@@ -356,7 +368,11 @@ export function BookReader({
   };
 
   const onPointerUp = () => {
-    if (panStart.current) { panStart.current = null; return; }
+    if (panStart.current) {
+      if (panStart.current.moved) lastDragEnd.current = performance.now();
+      panStart.current = null;
+      return;
+    }
     const state = drag.current;
     drag.current = null;
     if (!state) return;
@@ -388,7 +404,7 @@ export function BookReader({
   const onTouchEnd = () => { pinchStart.current = null; };
 
   const onWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    if (covered || leafRef.current || Math.abs(event.deltaY) < 24) return;
+    if (covered || zoom > 1 || leafRef.current || Math.abs(event.deltaY) < 24) return;
     const now = performance.now();
     if (now - lastWheel.current < 650) return;
     lastWheel.current = now;
@@ -405,7 +421,7 @@ export function BookReader({
   };
 
   const onClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (covered || leafRef.current) return;
+    if (covered || leafRef.current || zoom > 1) return;
     if (performance.now() - lastDragEnd.current < 350) return;
     const target = event.target as HTMLElement;
     if (target.closest('a, button')) return;
@@ -508,6 +524,7 @@ export function BookReader({
       ref={stageRef}
       style={stageStyle}
       data-cover={phase}
+      data-zoomed={zoom > 1 ? 'true' : 'false'}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
