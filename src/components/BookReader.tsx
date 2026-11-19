@@ -411,7 +411,9 @@ export function BookReader({
     if (!state) return;
     if (!state.active) return;
     lastDragEnd.current = performance.now();
-    const completed = state.plan.dir === 'next' ? state.angle < -68 : state.angle > 68;
+    // Commit only after the sheet has crossed the visual midpoint; this avoids
+    // a page snapping forward while most of the paper is still on its old side.
+    const completed = state.plan.dir === 'next' ? state.angle < -100 : state.angle > 100;
     if (completed) finishTurn(state.plan, state.angle);
     else finishTurnBack(state.plan, state.angle, state.grabY);
   };
