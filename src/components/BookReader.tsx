@@ -94,13 +94,13 @@ function planTurn(dir: 'next' | 'prev', page: number, total: number, spread: boo
   }
   if (info.left == null) return null;
   const baseLeft = info.left - 2;
-  const newRight = info.left - 1;
+  const previousPage = info.left - 1;
   return {
     dir,
     baseLeft: baseLeft >= 1 ? baseLeft : null,
-    baseRight: newRight,
-    front: newRight,
-    back: info.left,
+    baseRight: info.right,
+    front: info.left,
+    back: previousPage,
     toPage: baseLeft >= 1 ? baseLeft : 1,
   };
 }
@@ -267,7 +267,7 @@ export function BookReader({
       const rest = Math.abs(plan.dir === 'next' ? angle : angle + 180) / 180;
       const duration = Math.max(260, Math.round(TURN_MS * Math.min(1, 0.3 + rest)));
       playPageTurn(plan.dir === 'next' ? 1 : -1);
-      const to = plan.dir === 'next' ? -180 : 0;
+      const to = plan.dir === 'next' ? -180 : 180;
       startTween(turnRaf, angle, to, duration, turnEase, (value) => setLeaf({ plan, angle: value }), () => {
         setLeaf(null);
         onPage(plan.toPage);
@@ -288,8 +288,8 @@ export function BookReader({
       const plan = planTurn(dir, page, total, spread);
       if (!plan) return;
       playPageTurn(dir === 'next' ? 1 : -1);
-      const from = dir === 'next' ? 0 : -180;
-      const to = dir === 'next' ? -180 : 0;
+      const from = 0;
+      const to = dir === 'next' ? -180 : 180;
       setLeaf({ plan, angle: from });
       // Paint the sheet lying flat for a couple of frames first, so rasterising the
       // strip layers never lands inside the animation and stutters its first step.
@@ -327,15 +327,23 @@ export function BookReader({
     if (target.closest('a, button')) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const edgeZone = Math.max(34, Math.min(76, rect.width * 0.12));
+    const nearOuterEdge = x <= edgeZone || x >= rect.width - edgeZone;
+    const cornerZone = Math.max(42, rect.height * 0.16);
+    const nearCorner = y <= cornerZone || y >= rect.height - cornerZone;
+    if (!nearOuterEdge && !nearCorner) return;
     const forward = spread ? x > rect.width / 2 : x > rect.width * 0.32;
     const plan = planTurn(forward ? 'next' : 'prev', page, total, spread);
     if (!plan) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
     drag.current = {
       startX: event.clientX,
       startY: event.clientY,
       plan,
       active: false,
-      angle: plan.dir === 'next' ? 0 : -180,
+      angle: 0,
       pointerId: event.pointerId,
     };
   };
@@ -362,8 +370,10 @@ export function BookReader({
       stageRef.current?.setPointerCapture(event.pointerId);
     }
     const unit = pageWidth || 1;
-    const raw = state.plan.dir === 'next' ? (dx / unit) * 200 : 180 + (dx / unit) * 200;
-    state.angle = Math.max(-180, Math.min(0, raw));
+    const raw = (dx / unit) * 200;
+    state.angle = state.plan.dir === 'next'
+      ? Math.max(-180, Math.min(0, raw))
+      : Math.max(0, Math.min(180, raw));
     setLeaf({ plan: state.plan, angle: state.angle });
   };
 
@@ -378,7 +388,7 @@ export function BookReader({
     if (!state) return;
     if (!state.active) return;
     lastDragEnd.current = performance.now();
-    const completed = state.plan.dir === 'next' ? state.angle < -68 : state.angle > -112;
+    const completed = state.plan.dir === 'next' ? state.angle < -68 : state.angle > 68;
     if (completed) finishTurn(state.plan, state.angle);
     else finishTurnBack(state.plan, state.angle);
   };
@@ -572,9 +582,8 @@ export function BookReader({
               front={leaf.plan.front ? <PageContent page={leaf.plan.front} render={renderPage} /> : null}
               back={leaf.plan.back ? <PageContent page={leaf.plan.back} render={renderPage} /> : null}
               style={{
-                left: spread ? pageWidth : 0,
-                // The whole sheet swings on its spine, so the browser animates one
-                // composited transform instead of repainting twenty page slices.
+                left: spread ? (leaf.plan.dir === 'next' ? pageWidth : 0) : 0,
+                transformOrigin: leaf.plan.dir === 'next' ? 'left center' : 'right center',
                 transform: `translateZ(1px) rotateY(${leaf.angle}deg)`,
               }}
               ariaHidden
