@@ -41,7 +41,7 @@ export function serializePublication(row, extra = {}) {
   return {
     id: row.id,
     // Publish readable Thai slugs while keeping the stored database slug as a legacy alias.
-    slug: slugify(row.title),
+    slug: `${slugify(row.title)}-${row.id}`,
     title: row.title,
     subtitle: row.subtitle,
     type: row.type,
