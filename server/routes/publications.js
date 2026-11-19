@@ -1,7 +1,7 @@
 import path from 'node:path';
 import express from 'express';
 import multer from 'multer';
-import { db, nowIso, runtime, todayKey, uniqueSlug } from '../db.js';
+import { db, nowIso, runtime, todayKey, uniqueSlug, slugify } from '../db.js';
 import { requireAuth, canManageContent } from '../auth.js';
 import {
   buildKeywordIndex,
@@ -52,10 +52,18 @@ async function validCategory(data, res) {
   return false;
 }
 
-function findPublication(idOrSlug) {
-  return db
+async function findPublication(idOrSlug) {
+  const key = String(idOrSlug);
+  const exact = await db
     .prepare(`${basePublicationQuery()} WHERE p.slug = ? OR p.id = ?`)
-    .get(String(idOrSlug), Number(idOrSlug) || -1);
+    .get(key, Number(key) || -1);
+  if (exact) return exact;
+
+  // Resolve the clean, title-based URL emitted to clients. This also keeps
+  // older stored slugs working as aliases without rewriting publication rows.
+  const candidates = await db.prepare(`${basePublicationQuery()} ORDER BY p.id ASC`).all();
+  const match = candidates.find((row) => slugify(row.title) === key);
+  return match ?? null;
 }
 
 function canAccess(row, user, { staff = false } = {}) {
