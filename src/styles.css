@@ -4037,8 +4037,11 @@ a.keyword-pill:hover {
   transform: scaleX(-1);
   opacity: calc(var(--curl-shadow, 0.2) * 0.82);
 }
+/* Do not apply filter to the 3D sheet wrapper: filter creates a flattened
+   compositing group in Chromium/WebKit and can make the reverse face show
+   the front raster. The two paper faces already carry their own shadows. */
 .book-turn-leaf {
-  filter: drop-shadow(0 8px 10px rgba(20, 16, 10, 0.12));
+  filter: none;
 }
 .book-turn-leaf .book-leaf-face {
   backface-visibility: hidden;
