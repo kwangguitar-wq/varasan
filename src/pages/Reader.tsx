@@ -84,6 +84,7 @@ export function Reader() {
   const [history, setHistory] = useState<number[]>([1]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const historyReady = useRef(false);
+  const historyNavigation = useRef(false);
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [pdfRatio, setPdfRatio] = useState<number | null>(null);
   const [epubPages, setEpubPages] = useState<EpubPage[]>([]);
@@ -226,6 +227,10 @@ export function Reader() {
   // Keep a small in-reader navigation history, similar to browser back/forward.
   useEffect(() => {
     if (!total) return;
+    if (historyNavigation.current) {
+      historyNavigation.current = false;
+      return;
+    }
     if (!historyReady.current) {
       historyReady.current = true;
       setHistory([page]);
@@ -238,7 +243,7 @@ export function Reader() {
       setHistoryIndex(nextItems.length - 1);
       return nextItems;
     });
-  }, [page, total]);
+  }, [page, total, historyIndex]);
 
   useEffect(() => {
     if (!autoFlip || !publication || !content || !total || showCover) return;
@@ -422,6 +427,7 @@ export function Reader() {
     if (historyIndex <= 0) return;
     const targetIndex = historyIndex - 1;
     setHistoryIndex(targetIndex);
+    historyNavigation.current = true;
     setPage(history[targetIndex]);
   };
 
