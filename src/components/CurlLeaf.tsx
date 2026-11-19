@@ -64,6 +64,8 @@ export function CurlLeaf({
     '--curl-progress': progress,
     '--curl-bend': bend,
     '--curl-shadow': Math.min(0.72, 0.12 + bend * 1.4),
+    '--curl-edge': `${Math.sin(progress * Math.PI) * 18}px`,
+    '--curl-fold-opacity': Math.min(0.9, 0.16 + Math.sin(progress * Math.PI) * 0.68),
   } as CSSProperties;
 
   return (
@@ -81,6 +83,8 @@ export function CurlLeaf({
           <>
             <span className="book-leaf-shade" style={{ opacity: shade }} aria-hidden="true" />
             <span className="book-leaf-curl-light" aria-hidden="true" />
+            <span className="book-leaf-fold" aria-hidden="true" />
+            <span className="book-leaf-edge" aria-hidden="true" />
           </>
         ) : null}
       </div>
@@ -92,6 +96,8 @@ export function CurlLeaf({
           <>
             <span className="book-leaf-shade" style={{ opacity: shade }} aria-hidden="true" />
             <span className="book-leaf-curl-light is-back" aria-hidden="true" />
+            <span className="book-leaf-fold is-back" aria-hidden="true" />
+            <span className="book-leaf-edge is-back" aria-hidden="true" />
           </>
         ) : null}
       </div>
