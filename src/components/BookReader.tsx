@@ -89,7 +89,9 @@ function planTurn(dir: 'next' | 'prev', page: number, total: number, spread: boo
     const nextRight = info.right + 2;
     return {
       dir,
-      baseLeft: back,
+      // Keep the current left page underneath; the turning sheet's back
+      // (page ${back}) must be revealed progressively as the leaf rotates.
+      baseLeft: info.left,
       baseRight: nextRight <= total ? nextRight : null,
       front: info.right,
       back,
@@ -103,8 +105,11 @@ function planTurn(dir: 'next' | 'prev', page: number, total: number, spread: boo
   const previousPage = info.left - 1;
   return {
     dir,
+    // Page before the current spread stays underneath on the left.
+    // Keep the current right page underneath on the right; previousPage is
+    // the reverse face of the turning leaf, not a separate static page.
     baseLeft: baseLeft >= 1 ? baseLeft : null,
-    baseRight: previousPage,
+    baseRight: info.right,
     front: info.left,
     back: previousPage,
     toPage: baseLeft >= 1 ? baseLeft : 1,
