@@ -53,7 +53,7 @@ interface TurnPlan {
 interface Leaf {
   plan: TurnPlan;
   angle: number;
-  grabY: number;
+  grabY?: number;
 }
 
 type Phase = 'closed' | 'opening' | 'gone';
@@ -596,7 +596,7 @@ export function BookReader({
               className="book-turn-leaf"
               shaded
               angle={leaf.angle}
-              curlY={leaf.grabY}
+              curlY={leaf.grabY ?? 0.78}
               width={pageWidth}
               height={pageHeight}
               edge={leafEdge}
