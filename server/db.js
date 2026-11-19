@@ -70,7 +70,7 @@ export function slugify(input, fallback = 'item') {
   const base = String(input ?? '')
     .normalize('NFKC')
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/[^\p{L}\p{N}\p{M}]+/gu, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 80);
   return base || `${fallback}-${Date.now().toString(36)}`;
