@@ -273,7 +273,8 @@ export function BookReader({
 
   const finishTurn = useCallback(
     (plan: TurnPlan, angle: number) => {
-      const rest = Math.abs(plan.dir === 'next' ? angle : angle + 180) / 180;
+      const targetAngle = plan.dir === 'next' ? -180 : 180;
+      const rest = Math.abs(targetAngle - angle) / 180;
       const duration = Math.max(260, Math.round(TURN_MS * Math.min(1, 0.3 + rest)));
       playPageTurn(plan.dir === 'next' ? 1 : -1);
       const to = plan.dir === 'next' ? -180 : 180;
