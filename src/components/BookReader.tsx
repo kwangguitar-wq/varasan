@@ -32,6 +32,7 @@ interface BookReaderProps {
   onPage: (page: number) => void;
   zoom?: number;
   onZoomToggle?: () => void;
+  onZoomChange?: (zoom: number) => void;
 }
 
 interface SpreadInfo {
@@ -194,6 +195,7 @@ export function BookReader({
   onPage,
   zoom = 1,
   onZoomToggle,
+  onZoomChange,
 }: BookReaderProps) {
   const [leaf, setLeaf] = useState<Leaf | null>(null);
   const [phase, setPhase] = useState<Phase>(showCover ? 'closed' : 'gone');
@@ -213,6 +215,9 @@ export function BookReader({
   } | null>(null);
   const lastDragEnd = useRef(0);
   const lastWheel = useRef(0);
+  const pinchStart = useRef<{ distance: number; zoom: number } | null>(null);
+  const panStart = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const leafRef = useRef<Leaf | null>(null);
   const covered = phase !== 'gone';
 
@@ -302,6 +307,12 @@ export function BookReader({
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (covered || leafRef.current) return;
+    if (zoom > 1) {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      panStart.current = { x: event.clientX, y: event.clientY, left: pan.x, top: pan.y };
+      event.currentTarget.setPointerCapture(event.pointerId);
+      return;
+    }
     if (event.pointerType === 'mouse' && event.button !== 0) return;
     const target = event.target as HTMLElement;
     if (target.closest('a, button')) return;
@@ -321,6 +332,10 @@ export function BookReader({
   };
 
   const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (panStart.current && zoom > 1) {
+      setPan({ x: panStart.current.left + event.clientX - panStart.current.x, y: panStart.current.top + event.clientY - panStart.current.y });
+      return;
+    }
     const state = drag.current;
     if (!state) return;
     const dx = event.clientX - state.startX;
@@ -341,6 +356,7 @@ export function BookReader({
   };
 
   const onPointerUp = () => {
+    if (panStart.current) { panStart.current = null; return; }
     const state = drag.current;
     drag.current = null;
     if (!state) return;
@@ -350,6 +366,26 @@ export function BookReader({
     if (completed) finishTurn(state.plan, state.angle);
     else finishTurnBack(state.plan, state.angle);
   };
+
+  const onTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (event.touches.length === 2 && onZoomChange) {
+      const a = event.touches[0];
+      const b = event.touches[1];
+      pinchStart.current = { distance: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), zoom };
+      drag.current = null;
+    }
+  };
+
+  const onTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 2 || !pinchStart.current || !onZoomChange) return;
+    event.preventDefault();
+    const a = event.touches[0];
+    const b = event.touches[1];
+    const distance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    onZoomChange(Math.max(1, Math.min(2.4, Number((pinchStart.current.zoom * distance / pinchStart.current.distance).toFixed(2)))));
+  };
+
+  const onTouchEnd = () => { pinchStart.current = null; };
 
   const onWheel = (event: React.WheelEvent<HTMLDivElement>) => {
     if (covered || leafRef.current || Math.abs(event.deltaY) < 24) return;
@@ -479,8 +515,11 @@ export function BookReader({
       onClick={onClick}
       onWheel={onWheel}
       onDoubleClick={onDoubleClick}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
     >
-      <div className="book-scene" style={{ transform: `scale(${zoom})` }}>
+      <div className="book-scene" style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, touchAction: zoom > 1 ? 'none' : 'pan-y' }}>
         <div className="book-wrap" style={wrapStyle}>
           <div className="book-shadow" aria-hidden="true" />
           <div className="book-spread" style={{ width: pageWidth * (spread ? 2 : 1), height: pageHeight }}>
