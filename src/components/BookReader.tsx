@@ -53,6 +53,7 @@ interface TurnPlan {
 interface Leaf {
   plan: TurnPlan;
   angle: number;
+  grabY: number;
 }
 
 type Phase = 'closed' | 'opening' | 'gone';
@@ -211,6 +212,7 @@ export function BookReader({
     plan: TurnPlan;
     active: boolean;
     angle: number;
+    grabY: number;
     pointerId: number;
   } | null>(null);
   const lastDragEnd = useRef(0);
@@ -270,7 +272,7 @@ export function BookReader({
       const duration = Math.max(260, Math.round(TURN_MS * Math.min(1, 0.3 + rest)));
       playPageTurn(plan.dir === 'next' ? 1 : -1);
       const to = plan.dir === 'next' ? -180 : 180;
-      startTween(turnRaf, angle, to, duration, turnEase, (value) => setLeaf({ plan, angle: value }), () => {
+      startTween(turnRaf, angle, to, duration, turnEase, (value) => setLeaf((current) => current?.plan === plan ? { ...current, angle: value } : current), () => {
         // First update the spread beneath the fully-turned sheet. Remove the sheet
         // only after the browser has painted that matching spread, avoiding a flash
         // where the right-hand page changes before the paper turn visually finishes.
@@ -299,7 +301,7 @@ export function BookReader({
       playPageTurn(dir === 'next' ? 1 : -1);
       const from = 0;
       const to = dir === 'next' ? -180 : 180;
-      setLeaf({ plan, angle: from });
+      setLeaf({ plan, angle: from, grabY: 0.78 });
       // Paint the sheet lying flat for a couple of frames first, so rasterising the
       // strip layers never lands inside the animation and stutters its first step.
       requestAnimationFrame(() => {
@@ -358,6 +360,7 @@ export function BookReader({
       plan,
       active: false,
       angle: 0,
+      grabY: Math.max(0.06, Math.min(0.94, y / Math.max(1, rect.height))),
       pointerId: event.pointerId,
     };
   };
@@ -388,7 +391,7 @@ export function BookReader({
     state.angle = state.plan.dir === 'next'
       ? Math.max(-180, Math.min(0, raw))
       : Math.max(0, Math.min(180, raw));
-    setLeaf({ plan: state.plan, angle: state.angle });
+    setLeaf({ plan: state.plan, angle: state.angle, grabY: state.grabY });
   };
 
   const onPointerUp = () => {
@@ -593,6 +596,7 @@ export function BookReader({
               className="book-turn-leaf"
               shaded
               angle={leaf.angle}
+              curlY={leaf.grabY}
               width={pageWidth}
               height={pageHeight}
               edge={leafEdge}
