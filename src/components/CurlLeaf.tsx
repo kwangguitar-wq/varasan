@@ -26,7 +26,7 @@ export interface CurlLeafProps {
  * a plain gradient instead of repainting the page every frame.
  */
 export function leafShade(angle: number) {
-  const rad = (Math.max(-180, Math.min(0, angle)) * Math.PI) / 180;
+  const rad = (Math.max(-180, Math.min(180, angle)) * Math.PI) / 180;
   const tilt = Math.abs(Math.sin(rad));
   return Math.min(0.55, 0.05 + tilt * 0.45);
 }
