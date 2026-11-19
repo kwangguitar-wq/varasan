@@ -3,6 +3,8 @@ import type { CSSProperties, ReactNode } from 'react';
 export interface CurlLeafProps {
   /** Overall rotation of the sheet about the spine, 0 … -180 degrees. */
   angle: number;
+  /** Vertical point where the reader is holding the paper (0 top, 1 bottom). */
+  curlY?: number;
   width: number;
   height: number;
   front: ReactNode;
@@ -38,6 +40,7 @@ export function leafShade(angle: number) {
  */
 export function CurlLeaf({
   angle,
+  curlY = 0.78,
   width,
   height,
   front,
@@ -54,11 +57,19 @@ export function CurlLeaf({
   onClick,
 }: CurlLeafProps) {
   const shade = shaded ? leafShade(angle) : 0;
+  const progress = Math.min(1, Math.abs(angle) / 180);
+  const bend = Math.sin(progress * Math.PI) * (0.18 + Math.abs(curlY - 0.5) * 0.34);
+  const curlStyle = {
+    '--curl-y': `${curlY * 100}%`,
+    '--curl-progress': progress,
+    '--curl-bend': bend,
+    '--curl-shadow': Math.min(0.72, 0.12 + bend * 1.4),
+  } as CSSProperties;
 
   return (
     <div
       className={`book-leaf ${className}`.trim()}
-      style={{ width, height, ...style }}
+      style={{ width, height, ...curlStyle, ...style }}
       aria-label={ariaLabel}
       role={role}
       aria-hidden={ariaHidden}
@@ -67,7 +78,10 @@ export function CurlLeaf({
       <div className={`book-leaf-face book-leaf-front is-${edge} ${frontClass}`.trim()}>
         <div className="book-page-body">{front}</div>
         {shaded ? (
-          <span className="book-leaf-shade" style={{ opacity: shade }} aria-hidden="true" />
+          <>
+            <span className="book-leaf-shade" style={{ opacity: shade }} aria-hidden="true" />
+            <span className="book-leaf-curl-light" aria-hidden="true" />
+          </>
         ) : null}
       </div>
       <div
@@ -75,7 +89,10 @@ export function CurlLeaf({
       >
         <div className="book-page-body">{back}</div>
         {shaded ? (
-          <span className="book-leaf-shade" style={{ opacity: shade }} aria-hidden="true" />
+          <>
+            <span className="book-leaf-shade" style={{ opacity: shade }} aria-hidden="true" />
+            <span className="book-leaf-curl-light is-back" aria-hidden="true" />
+          </>
         ) : null}
       </div>
     </div>
