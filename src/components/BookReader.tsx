@@ -287,10 +287,10 @@ export function BookReader({
     [onPage],
   );
 
-  const finishTurnBack = useCallback((plan: TurnPlan, angle: number) => {
-    const to = plan.dir === 'next' ? 0 : -180;
+  const finishTurnBack = useCallback((plan: TurnPlan, angle: number, grabY = 0.78) => {
+    const to = 0;
     playPageTurn(-1);
-    startTween(turnRaf, angle, to, 420, turnEase, (value) => setLeaf({ plan, angle: value }), () => setLeaf(null));
+    startTween(turnRaf, angle, to, 420, turnEase, (value) => setLeaf({ plan, angle: value, grabY }), () => setLeaf(null));
   }, []);
 
   const startTurn = useCallback(
@@ -307,7 +307,7 @@ export function BookReader({
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (leafRef.current?.plan !== plan) return;
-          startTween(turnRaf, from, to, TURN_MS, turnEase, (value) => setLeaf({ plan, angle: value }), () => {
+          startTween(turnRaf, from, to, TURN_MS, turnEase, (value) => setLeaf({ plan, angle: value, grabY: 0.78 }), () => {
             // Keep the turned page visible until the destination spread is painted.
             committingTurn.current = true;
             onPage(plan.toPage);
@@ -326,7 +326,7 @@ export function BookReader({
     const dragState = drag.current;
     drag.current = null;
     if (!dragState?.active) return;
-    finishTurnBack(dragState.plan, dragState.angle);
+    finishTurnBack(dragState.plan, dragState.angle, dragState.grabY);
   }, [finishTurnBack]);
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -407,7 +407,7 @@ export function BookReader({
     lastDragEnd.current = performance.now();
     const completed = state.plan.dir === 'next' ? state.angle < -68 : state.angle > 68;
     if (completed) finishTurn(state.plan, state.angle);
-    else finishTurnBack(state.plan, state.angle);
+    else finishTurnBack(state.plan, state.angle, state.grabY);
   };
 
   const onTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
