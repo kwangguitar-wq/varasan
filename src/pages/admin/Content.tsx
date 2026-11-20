@@ -68,11 +68,24 @@ export function AdminContent() {
   }, [query]);
 
   const update = (key: string, value: string) => {
-    const next = new URLSearchParams(params);
-    if (!value || value === 'all') next.delete(key);
-    else next.set(key, value);
-    next.delete('page');
-    setParams(next, { replace: true });
+    setParams((current) => {
+      const next = new URLSearchParams(current);
+      if (!value || value === 'all') next.delete(key);
+      else next.set(key, value);
+      if (key !== 'page') next.delete('page');
+      return next;
+    }, { replace: true });
+  };
+
+  const changePage = (nextPage: number) => {
+    const lastPage = result?.pages ?? 1;
+    const safePage = Math.min(Math.max(1, nextPage), lastPage);
+    setParams((current) => {
+      const next = new URLSearchParams(current);
+      if (safePage <= 1) next.delete('page');
+      else next.set('page', String(safePage));
+      return next;
+    });
   };
 
   const owned = (item: Publication) => user?.role === 'admin' || item.createdBy === user?.id;
@@ -269,7 +282,7 @@ export function AdminContent() {
             type="button"
             className="btn btn-outline btn-sm"
             disabled={page <= 1}
-            onClick={() => update('page', String(page - 1))}
+            onClick={() => changePage(page - 1)}
           >
             ก่อนหน้า
           </button>
@@ -280,7 +293,7 @@ export function AdminContent() {
             type="button"
             className="btn btn-outline btn-sm"
             disabled={page >= result.pages}
-            onClick={() => update('page', String(page + 1))}
+            onClick={() => changePage(page + 1)}
           >
             ถัดไป
           </button>
